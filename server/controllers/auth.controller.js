@@ -4,17 +4,26 @@ import jwt from "jsonwebtoken";
 
 export const registerUser = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, confirmPassword } = req.body;
+    const normalizedEmail = email.trim().toLowerCase();
 
     //Validamos campos
-    if (!email || !password) {
+    if (!normalizedEmail || !password || !confirmPassword) {
       return res
         .status(400)
         .json({ message: "Todos los campos son obligatorios" });
     }
 
+    //Validamos password
+
+    if(password !== confirmPassword){
+      return res.status(400).json({
+        message:"Las contraseñas no coinciden"
+      });
+    }
+
     //Verificamos si el usuario existe
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: "El usuario ya esta registrado" });
     }
@@ -24,7 +33,7 @@ export const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     //Creamos el usuario
-    const newUser = new User({ email, password: hashedPassword });
+    const newUser = new User({ normalizedEmail, password: hashedPassword });
     await newUser.save();
 
     //Enviamos respuesta
@@ -39,9 +48,9 @@ export const registerUser = async (req, res) => {
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-
+    const normalizedEmail = email.trim().toLowerCase();
     //Verificamos que los campos esten completos
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return res
         .status(400)
         .json({ message: "Todos los campos son obligatorios" });
@@ -49,7 +58,7 @@ export const loginUser = async (req, res) => {
 
     //Buscamos el usuario en la base de datos
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ normalizedEmail });
     if (!user) {
       return res.status(404).json({ message: "usuario no encontrado" });
     }
