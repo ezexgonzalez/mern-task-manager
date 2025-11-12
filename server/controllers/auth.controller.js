@@ -23,7 +23,7 @@ export const registerUser = async (req, res) => {
     }
 
     //Verificamos si el usuario existe
-    const existingUser = await User.findOne({ normalizedEmail });
+    const existingUser = await User.findOne({ email : normalizedEmail });
     if (existingUser) {
       return res.status(400).json({ message: "El usuario ya esta registrado" });
     }
@@ -33,7 +33,7 @@ export const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     //Creamos el usuario
-    const newUser = new User({ normalizedEmail, password: hashedPassword });
+    const newUser = new User({ email: normalizedEmail, password: hashedPassword });
     await newUser.save();
 
     //Enviamos respuesta
@@ -58,13 +58,13 @@ export const loginUser = async (req, res) => {
 
     //Buscamos el usuario en la base de datos
 
-    const user = await User.findOne({ normalizedEmail });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user) {
-      return res.status(404).json({ message: "usuario no encontrado" });
+      return res.status(401).json({ message: "usuario no encontrado" });
     }
 
     //Comparar contraseñas
-    const validPassword = bcrypt.compare(password, user.password);
+    const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
       return res.status(401).json({ message: "Contraseña incorrecta" });
     }
