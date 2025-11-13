@@ -4,8 +4,17 @@ import Register from "../pages/Register.jsx";
 import Login from "../pages/Login.jsx";
 import Dashboard from "../pages/Dashboard.jsx";
 import PrivateRoute from "./PrivateRoute.jsx";
+import { useAuthStore } from "../store/useAuthStore.js";
+import { useEffect } from "react";
 
 function AppRouter() {
+
+  const userState = useAuthStore((state) => state);
+
+  useEffect(()=>{
+    userState.checkAuth();
+  },[]);
+
   return (
     <BrowserRouter>
       <Routes>

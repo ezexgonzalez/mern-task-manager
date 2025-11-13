@@ -4,6 +4,7 @@ import * as yup from "yup";
 import { loginUser } from "../services/authService.js";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "../store/useAuthStore.js";
 
 //Validaciones
 const schema = yup.object().shape({
@@ -20,6 +21,7 @@ const LoginForm = () => {
   const [successMessage, setSuccessMessage] = useState("");
 
   const navigate = useNavigate();
+  const login = useAuthStore((state) => state.login);
 
   //Manejo de formulario
   const {
@@ -40,8 +42,7 @@ const LoginForm = () => {
         password: data.password,
       });
       //guardamos el token jwt en localstorage
-
-      localStorage.setItem("token", response.token);
+      login(response.token, response.user);
 
       setSuccessMessage(response.message);
       reset();

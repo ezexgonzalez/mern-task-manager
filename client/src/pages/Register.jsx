@@ -1,15 +1,14 @@
-import RegisterForm from "../components/RegisterForm"
+import RegisterForm from "../components/RegisterForm";
+import { useVerifyToken } from "../hooks/useVerifyToken.js";
 
+const Register = () => {
+  useVerifyToken();
 
-const Register = () =>{
-
-
-    return(
-        <div>
-            <RegisterForm/>
-        </div>
-    )
-}
-
+  return (
+    <div>
+      <RegisterForm />
+    </div>
+  );
+};
 
 export default Register;
