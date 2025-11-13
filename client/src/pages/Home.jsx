@@ -1,6 +1,9 @@
+import { useVerifyToken } from "../hooks/useVerifyToken.js";
 
 
 const Home = () =>{
+
+    useVerifyToken();
 
     return(
     <div>
