@@ -1,7 +1,7 @@
 import express from "express";
 import { registerUser } from "../controllers/auth.controller.js";
 import { loginUser } from "../controllers/auth.controller.js";
-import { verifyToken } from "../middlewares/verifyToken.js";
+import { authRequired } from "../middlewares/authRequired.js";
 
 const router = express.Router();
 
@@ -10,7 +10,7 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 
 //rutas privadas
-router.get("/dashboard", verifyToken, (req, res) => {
+router.get("/dashboard", authRequired, (req, res) => {
   res.json({
     message : "Acceso permitido: token valido",
     user: req.user, //usuario decodificado
@@ -18,7 +18,7 @@ router.get("/dashboard", verifyToken, (req, res) => {
 });
 
 //Verificacion de Token
-router.get("/verify", verifyToken, (req,res)=>{
+router.get("/verify", authRequired, (req,res)=>{
   res.json({
     message: "Acceso permitido: token valido",
     user: req.user
