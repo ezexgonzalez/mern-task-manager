@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-export const verifyToken = (req, res, next) =>{
+export const authRequired = (req, res, next) =>{
 
     try {
         //Obtenemos el header "Autorization" del request
