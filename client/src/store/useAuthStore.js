@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "axios";
+import { verifyToken } from "../services/authService.js";
 
 export const useAuthStore = create((set) => ({
   user: null,
@@ -13,13 +13,7 @@ export const useAuthStore = create((set) => ({
       return;
     }
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/auth/verify`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
+      const res = await verifyToken();
       set({
         user: res.data.user,
         isAuthenticated: true,
