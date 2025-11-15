@@ -19,3 +19,12 @@ export const loginUser = async (data) =>{
     throw error.response?.data?.message || "Error al iniciar sesión"
   }
 }
+
+export const verifyToken = async ()=>{
+  const token = localStorage.getItem("token");
+  return api.get("/auth/verify", {
+    headers:{
+      Authorization:`Bearer ${token}`,
+    }
+  });
+};

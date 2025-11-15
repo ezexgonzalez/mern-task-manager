@@ -48,7 +48,6 @@ const LoginForm = () => {
       reset();
       setServerError("");
       navigate("/dashboard");
-      console.log(response);
     } catch (error) {
       setServerError(error);
       setSuccessMessage("");
