@@ -1,34 +1,66 @@
 import NavBar from "../components/layout/Navbar.jsx";
 import { useTasks } from "../hooks/useTasks.js";
+import TaskFormWrapper from "../components/TaskFormWrapper.jsx";
+import TaskCard from "../components/TaskCard.jsx";
+import TaskListSkeleton from "../components/TaskListSkeleton.jsx";
 
 const Dashboard = () => {
-  const { tasks, loading, error } = useTasks();
-
-  if (loading) return <p>Cargando tareas</p>;
-  if (error) return <p>Error: {error}</p>;
-
-  if (tasks.length === 0) {
-    return <p>No hay tareas aun, Crea una para comenzar.</p>;
-  }
-
+  const { tasks, loading, error, createTask } = useTasks();
+  console.log(tasks);
   return (
-    <div className="flex flex-col">
+    <>
+      {/* Navbar fijo arriba a la derecha */}
       <NavBar />
-      <div className="flex flex-col justify-center items-center gap-5">
-        {tasks.map((task) => (
-          <div
-            key={task._id}
-            style={{backgroundColor: task.color}}
-            className={`flex flex-col w-50 h-50 items-center justify-between`}
-          >
-            <h3>{task.title}</h3>
-            <p>{task.description}</p>
-            <span>{task.status}</span>
-          </div>
-        ))}
-      </div>
-    </div>
+
+      {/* Contenido principal del dashboard */}
+      <main
+        className="
+          pt-10               /* espacio bajo el navbar fijo */
+          flex flex-col 
+          gap-6
+        "
+      >
+        {/* FORM PARA CREAR TAREAS */}
+        <section>
+          <TaskFormWrapper onSubmit={createTask} />
+        </section>
+
+        {/* LISTA / ESTADO DE TAREAS */}
+        <section className="flex flex-col gap-4">
+          {/* Error (si hay) */}
+          {error && (
+            <p className="text-red-400 text-sm">
+              Error: {error.message || "Ocurrió un problema al cargar las tareas."}
+            </p>
+          )}
+
+          {/* LOADING → SKELETON LIST */}
+          {loading && !error && <TaskListSkeleton />}
+
+          {/* Cuando no hay loading ni error */}
+          {!loading && !error && (
+            <>
+              {tasks.length === 0 ? (
+                <p className="text-gray-500 text-sm">
+                  No hay tareas aún. Creá una para comenzar.
+                </p>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {tasks.map((task) => (
+                    <TaskCard key={task._id} task={task} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </main>
+    </>
   );
 };
 
 export default Dashboard;
+
+
+
+
