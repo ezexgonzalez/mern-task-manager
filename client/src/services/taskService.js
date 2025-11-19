@@ -3,7 +3,7 @@ import api from "./api.js";
 export const getTasks = async () => {
   try {
     const res = await api.get("/tasks");
-    return (await res).data;
+    return res.data;
   } catch (error) {
     throw error.response?.data?.message || "Error al obtener tareas";
   }
@@ -21,7 +21,7 @@ export const getTaskById = async (id) => {
 export const createTask = async (data) => {
   try {
     const res = await api.post("/tasks", data);
-    return res.data; 
+    return res.data;
   } catch (error) {
     throw error.response?.data?.message || "Error al crear la tarea";
   }
@@ -39,7 +39,7 @@ export const updateTask = async (id, data) => {
 export const deleteTask = async (id) => {
   try {
     const res = await api.delete(`/tasks/${id}`);
-    return res.data; 
+    return res.data;
   } catch (error) {
     throw error.response?.data?.message || "Error al eliminar la tarea";
   }
