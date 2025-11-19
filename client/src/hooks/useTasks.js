@@ -7,63 +7,62 @@ import {
 } from "../services/taskService.js";
 
 export const useTasks = () => {
-
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchTasks = async () =>{
+  const fetchTasks = async () => {
     try {
       setLoading(true);
       setError(null);
       const data = await getTasksService();
-      setTasks(data || []);
+      setTasks(data.tasks || []);
     } catch (error) {
       setError(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
 
-  const createTask = async (taskData) =>{
+  const createTask = async (taskData) => {
     try {
       setLoading(true);
       await createTaskService(taskData);
       await fetchTasks();
     } catch (error) {
       setError(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
 
-  const updateTask = async (id, taskData)=>{
+  const updateTask = async (id, taskData) => {
     try {
       setLoading(true);
       await updateTaskService(id, taskData);
       await fetchTasks();
     } catch (error) {
       setError(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
-  }
+  };
 
-  const deleteTask = async (id) =>{
+  const deleteTask = async (id) => {
     try {
       setLoading(true);
       await deleteTaskService(id);
       await fetchTasks();
     } catch (error) {
       setError(error);
-    }finally{
+    } finally {
       setLoading(false);
     }
-  }
+  };
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchTasks();
-  },[]);
+  }, []);
 
   return {
     tasks,
@@ -73,8 +72,5 @@ export const useTasks = () => {
     createTask,
     updateTask,
     deleteTask,
-  }
-
+  };
 };
-
-
