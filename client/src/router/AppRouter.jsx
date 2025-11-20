@@ -19,9 +19,7 @@ function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={
-          <Layout>
             <Home />
-          </Layout>
         } />
         <Route path="/register" element={
           <Layout>
