@@ -62,7 +62,7 @@ const Home = () => {
 
           {/* Ir a Login */}
           <Link
-            to="/login"
+            to="/login" 
             className="
               w-full sm:w-auto
               px-5 py-2.5

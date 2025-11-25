@@ -5,7 +5,7 @@ const Register = () => {
   useVerifyToken();
 
   return (
-    <div>
+    <div className="min-h-[calc(100vh-3rem)] flex items-center justify-center">
       <RegisterForm />
     </div>
   );
