@@ -5,7 +5,7 @@ import TaskCard from "../components/TaskCard.jsx";
 import TaskListSkeleton from "../components/TaskListSkeleton.jsx";
 
 const Dashboard = () => {
-  const { tasks, loading, error, createTask } = useTasks();
+  const { tasks, loading, error, createTask, deleteTask, updateTask } = useTasks();
   console.log(tasks);
   return (
     <>
@@ -47,7 +47,7 @@ const Dashboard = () => {
               ) : (
                 <div className="flex flex-col gap-4">
                   {tasks.map((task) => (
-                    <TaskCard key={task._id} task={task} />
+                    <TaskCard key={task._id} onDelete={deleteTask} task={task} />
                   ))}
                 </div>
               )}
