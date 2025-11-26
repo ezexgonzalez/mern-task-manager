@@ -3,11 +3,15 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { registerUser } from "../services/authService.js";
 import { useState } from "react";
-import { Mail, Lock } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Mail, Lock, User } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 
 // Validaciones con yup
 const schema = yup.object().shape({
+  name: yup
+    .string()
+    .required("El nombre es obligatorio")
+    .min(2, "Debe tener al menos 2 caracteres"),
   email: yup
     .string()
     .email("El email no es valido")
@@ -30,22 +34,21 @@ const RegisterForm = () => {
 
   const navigate = useNavigate();
 
-  // Manejo de formulario
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm({
-    resolver: yupResolver(schema), // conecta el esquema de validacion
+    resolver: yupResolver(schema),
   });
 
-  // Submit
   const onSubmit = async (data) => {
     console.log("datos enviados", data);
     setIsSubmitting(true);
     try {
       const response = await registerUser({
+        name: data.name,
         email: data.email,
         password: data.password,
         confirmPassword: data.confirmPassword,
@@ -58,7 +61,6 @@ const RegisterForm = () => {
       reset();
       setServerError("");
 
-      // redirigir al login luego de unos segundos
       setTimeout(() => {
         navigate("/login");
       }, 2500);
@@ -101,6 +103,39 @@ const RegisterForm = () => {
               space-y-4
             "
           >
+            {/* Nombre */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-gray-300">
+                Nombre
+              </label>
+
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                  <User size={16} />
+                </span>
+
+                <input
+                  className="
+                    w-full pl-10 pr-4 py-3
+                    bg-glassLight backdrop-blur-md
+                    rounded-bubble border border-borderGlass
+                    text-gray-200 placeholder-gray-500
+                    focus:outline-none focus:ring-2 focus:ring-glassMedium
+                    transition shadow-bubble text-sm
+                  "
+                  type="text"
+                  placeholder="Tu nombre"
+                  {...register("name")}
+                />
+              </div>
+
+              {errors.name && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.name.message}
+                </p>
+              )}
+            </div>
+
             {/* Email */}
             <div className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-300">
@@ -240,11 +275,32 @@ const RegisterForm = () => {
             <span>{successMessage}</span>
           </p>
         )}
+
+        {/* Navegación: ya tengo cuenta / volver al inicio */}
+        <div className="mt-3 flex flex-col items-center gap-1 text-xs">
+          <p className="text-slate-400">
+            ¿Ya tenés cuenta?{" "}
+            <Link
+              to="/login"
+              className="text-gray-100 font-medium hover:text-white hover:underline"
+            >
+              Iniciar sesión
+            </Link>
+          </p>
+
+          <Link
+            to="/"
+            className="text-slate-500 hover:text-slate-300 transition"
+          >
+            ← Volver al inicio
+          </Link>
+        </div>
       </div>
     </form>
   );
 };
 
 export default RegisterForm;
+
 
 

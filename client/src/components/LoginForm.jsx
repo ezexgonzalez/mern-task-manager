@@ -3,7 +3,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { loginUser } from "../services/authService.js";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore.js";
 import { Mail, Lock } from "lucide-react";
 
@@ -190,6 +190,24 @@ const LoginForm = () => {
             {successMessage}
           </p>
         )}
+         <div className="mt-3 flex flex-col items-center gap-1 text-xs">
+          <p className="text-slate-400">
+            ¿Todavía no tenés cuenta?{" "}
+            <Link
+              to="/register"
+              className="text-gray-100 font-medium hover:text-white hover:underline"
+            >
+              Crear cuenta
+            </Link>
+          </p>
+
+          <Link
+            to="/"
+            className="text-slate-500 hover:text-slate-300 transition"
+          >
+            ← Volver al inicio
+          </Link>
+        </div>
       </div>
     </form>
   );

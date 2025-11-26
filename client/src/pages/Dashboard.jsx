@@ -6,10 +6,14 @@ import TaskCard from "../components/TaskCard.jsx";
 import TaskListSkeleton from "../components/TaskListSkeleton.jsx";
 import Toast from "../components/Toast.jsx";
 import TaskEditModal from "../components/TaskEditModal.jsx";
+import { useAuthStore } from "../store/useAuthStore.js";
 
 const Dashboard = () => {
   const { tasks, loading, error, createTask, deleteTask, updateTask } =
     useTasks();
+
+  const user = useAuthStore((state) => state.user);
+  const firstName = user?.name?.split(" ")[0] || "Usuario";
 
   const [taskToEdit, setTaskToEdit] = useState(null);
 
@@ -65,6 +69,14 @@ const Dashboard = () => {
           gap-6
         "
       >
+        <section className="flex flex-col gap-1">
+          <h1 className="text-xl font-semibold text-white">
+            Hola, {firstName} 👋
+          </h1>
+          <p className="text-sm text-slate-400">
+            Esto es lo que tenés para hoy.
+          </p>
+        </section>
         <section>
           <TaskFormWrapper onSubmit={createTask} />
         </section>
@@ -82,9 +94,16 @@ const Dashboard = () => {
           {!loading && !error && (
             <>
               {tasks.length === 0 ? (
-                <p className="text-gray-500 text-sm">
-                  No hay tareas aún. Creá una para comenzar.
-                </p>
+                <div>
+                  <p className="text-gray-400 font-medium">
+                    Todavía no tenés tareas.
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Escribí una idea arriba en{" "}
+                    <span className="font-medium">“¿Alguna idea nueva?”</span> y
+                    presioná Enter para crear tu primera tarea.
+                  </p>
+                </div>
               ) : (
                 <div className="flex flex-col gap-4">
                   {tasks.map((task) => (
@@ -117,4 +136,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
