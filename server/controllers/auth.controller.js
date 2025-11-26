@@ -4,11 +4,11 @@ import jwt from "jsonwebtoken";
 
 export const registerUser = async (req, res) => {
   try {
-    const { email, password, confirmPassword } = req.body;
+    const { name, email, password, confirmPassword } = req.body;
     const normalizedEmail = email.trim().toLowerCase();
 
     //Validamos campos
-    if (!normalizedEmail || !password || !confirmPassword) {
+    if (!name || !normalizedEmail || !password || !confirmPassword) {
       return res
         .status(400)
         .json({ message: "Todos los campos son obligatorios" });
@@ -33,7 +33,7 @@ export const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     //Creamos el usuario
-    const newUser = new User({ email: normalizedEmail, password: hashedPassword });
+    const newUser = new User({name, email: normalizedEmail, password: hashedPassword });
     await newUser.save();
 
     //Enviamos respuesta
@@ -73,10 +73,11 @@ export const loginUser = async (req, res) => {
     const token = jwt.sign(
       {
         id: user._id,
-        email: user.email
+        email: user.email,
+        name: user.name
       },
       process.env.JWT_SECRET,
-      {expiresIn:"1h"}
+      {expiresIn:"7d"}
     );
 
     //Enviamos el token al front

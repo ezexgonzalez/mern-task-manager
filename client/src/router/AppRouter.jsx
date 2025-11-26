@@ -7,6 +7,7 @@ import PrivateRoute from "./PrivateRoute.jsx";
 import { useAuthStore } from "../store/useAuthStore.js";
 import { useEffect } from "react";
 import Layout from "../components/layout/Layout.jsx";
+import NotFoundRedirect from "./NotFoundRedirect.jsx";
 
 function AppRouter() {
   const userState = useAuthStore((state) => state);
@@ -18,19 +19,23 @@ function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={
-            <Home />
-        } />
-        <Route path="/register" element={
-          <Layout>
-            <Register />
-          </Layout>
-        } />
-        <Route path="/login" element={
-          <Layout>
-            <Login />
-          </Layout>
-        } />
+        <Route path="/" element={<Home />} />
+        <Route
+          path="/register"
+          element={
+            <Layout>
+              <Register />
+            </Layout>
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <Layout>
+              <Login />
+            </Layout>
+          }
+        />
 
         {/* Private Routes */}
         <Route element={<PrivateRoute />}>
@@ -43,6 +48,7 @@ function AppRouter() {
             }
           />
         </Route>
+        <Route path="*" element={<NotFoundRedirect />} />
       </Routes>
     </BrowserRouter>
   );
