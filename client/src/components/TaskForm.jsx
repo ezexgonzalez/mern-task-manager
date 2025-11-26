@@ -1,3 +1,4 @@
+// TaskForm.jsx
 import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
@@ -15,7 +16,13 @@ const schema = yup.object().shape({
   color: yup.string().required(),
 });
 
-const TaskForm = ({ onSubmit, titleValue }) => {
+const TaskForm = ({
+  onSubmit,
+  titleValue,
+  initialTask,
+  submitLabel = "Crear tarea",
+  showTitleInput = false,
+}) => {
   const {
     register,
     handleSubmit,
@@ -26,27 +33,22 @@ const TaskForm = ({ onSubmit, titleValue }) => {
   } = useForm({
     resolver: yupResolver(schema),
     defaultValues: {
-      title: titleValue || "",
-      description: "",
-      status: "pending",
-      color: "#ffffff",
+      title: initialTask?.title || titleValue || "",
+      description: initialTask?.description || "",
+      status: initialTask?.status || "pending",
+      color: initialTask?.color || "#ffffff",
     },
   });
 
-    // obtenemos props y ref de RHF para description
-  const {
-    ref: descriptionFieldRef,
-    ...descriptionReg
-  } = register("description");
-
+  const { ref: descriptionFieldRef, ...descriptionReg } =
+    register("description");
 
   const [statusOpen, setStatusOpen] = useState(false);
   const status = watch("status");
 
-  // ref para auto-ajustar altura del textarea
   const descriptionRef = useRef(null);
 
-  // sincroniza el título con el input del wrapper
+  // sincroniza el título con el input del wrapper (modo crear)
   useEffect(() => {
     if (titleValue !== undefined) {
       setValue("title", titleValue);
@@ -55,6 +57,7 @@ const TaskForm = ({ onSubmit, titleValue }) => {
 
   const submit = (data) => {
     onSubmit(data);
+
     reset({
       title: "",
       description: "",
@@ -62,7 +65,7 @@ const TaskForm = ({ onSubmit, titleValue }) => {
       color: "#ffffff",
     });
     setStatusOpen(false);
-    // reseteamos visualmente el textarea
+
     if (descriptionRef.current) {
       descriptionRef.current.style.height = "";
     }
@@ -77,16 +80,21 @@ const TaskForm = ({ onSubmit, titleValue }) => {
   const current =
     allStatusOptions.find((opt) => opt.value === status) || allStatusOptions[0];
 
-  const visibleOptions = allStatusOptions.filter(
-    (opt) => opt.value !== status
-  );
+  const visibleOptions = allStatusOptions.filter((opt) => opt.value !== status);
 
-  // auto-grow del textarea
   const handleDescriptionInput = (e) => {
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   };
+
+  useEffect(() => {
+    if (initialTask?.description && descriptionRef.current) {
+      const el = descriptionRef.current;
+      el.style.height = "auto";
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  }, [initialTask]);
 
   return (
     <form
@@ -94,13 +102,35 @@ const TaskForm = ({ onSubmit, titleValue }) => {
       className="flex flex-col gap-4 w-full"
       onClick={(e) => e.stopPropagation()}
     >
+      {/* TÍTULO (solo en modo edición / cuando se pida) */}
+      {showTitleInput && (
+        <div className="flex flex-col gap-1">
+          <input
+            type="text"
+            placeholder="Título de la tarea"
+            {...register("title")}
+            className="
+              w-full px-4 py-2.5
+              bg-glassLight backdrop-blur-md
+              rounded-bubble border border-borderGlass
+              text-gray-200 placeholder-gray-500
+              focus:outline-none focus:ring-2 focus:ring-glassMedium
+              transition shadow-bubble
+            "
+          />
+          {errors.title && (
+            <p className="text-red-400 text-xs">{errors.title.message}</p>
+          )}
+        </div>
+      )}
+
       {/* DESCRIPCIÓN */}
-       <textarea
+      <textarea
         placeholder="Descripción opcional"
         {...descriptionReg}
         ref={(el) => {
-          descriptionRef.current = el;   // ref para el auto-resize / reset
-          descriptionFieldRef(el);       // ref que necesita react-hook-form
+          descriptionRef.current = el;
+          descriptionFieldRef(el);
         }}
         onInput={handleDescriptionInput}
         className="
@@ -132,9 +162,7 @@ const TaskForm = ({ onSubmit, titleValue }) => {
           "
         >
           <div className="flex items-center gap-3">
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${current.dotClass}`}
-            />
+            <span className={`w-2.5 h-2.5 rounded-full ${current.dotClass}`} />
             <span>{current.label}</span>
           </div>
 
@@ -214,7 +242,7 @@ const TaskForm = ({ onSubmit, titleValue }) => {
             shadow-bubble text-sm font-medium
           "
         >
-          Crear tarea
+          {submitLabel}
         </button>
       </div>
     </form>
@@ -222,4 +250,3 @@ const TaskForm = ({ onSubmit, titleValue }) => {
 };
 
 export default TaskForm;
-
