@@ -1,0 +1,24 @@
+/* eslint-disable */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #0E0F12;
+  color: #ffffff;
+  font-family: "Inter", sans-serif;
+
+  /* Radial super sutil, estilo iOS */
+
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Evitar scroll horizontal */
+  overflow-x: hidden;
+}
