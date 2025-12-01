@@ -3,9 +3,9 @@ import { MoreVertical } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const STATUS_DOT_COLOR = {
-  pending: "bg-warning",        // naranja
-  "in-progress": "bg-progress", // amarillo
-  completed: "bg-success",      // verde
+  pending: "bg-warning",
+  "in-progress": "bg-progress",
+  completed: "bg-success",
 };
 
 const TaskCard = ({ task, onEdit, onDelete }) => {
@@ -27,7 +27,6 @@ const TaskCard = ({ task, onEdit, onDelete }) => {
     if (onDelete) onDelete(task._id);
   };
 
-  // cerrar menú al clickear fuera
   useEffect(() => {
     if (!isMenuOpen) return;
 
@@ -54,34 +53,49 @@ const TaskCard = ({ task, onEdit, onDelete }) => {
         shadow-bubble
         px-5 py-4
         transition
-        flex justify-between items-center
+        flex justify-between items-start gap-3
         hover:bg-glassMedium
-        hover:border-glassMedium  
-        hover:-translate-y-[1px]  
+        hover:border-glassMedium
+        hover:-translate-y-[1px]
         hover:shadow-[0_12px_35px_rgba(0,0,0,0.55)]
         ${isMenuOpen ? "z-20" : "z-0"}
         group
       `}
     >
       {/* Izquierda: dot + textos */}
-      <div className="flex items-start gap-3">
-        <span className={`w-2.5 h-2.5 rounded-full mt-1 ${dotClass}`} />
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        {/* PUNTO → no se achica más */}
+        <span
+          className={`
+            w-2.5 h-2.5
+            rounded-full
+            mt-1
+            shrink-0      /* ⬅ clave */
+            ${dotClass}
+          `}
+        />
 
-        <div className="flex flex-col">
+        <div className="flex flex-col min-w-0">
           <h3 className="text-gray-100 font-semibold text-base leading-snug">
             {task.title}
           </h3>
 
-          <p className="text-slate-400 text-sm mt-1">
+          <p
+            className="
+              text-slate-400 text-sm mt-1
+              break-words
+            "
+          >
             {task.description || "Descripción opcional"}
           </p>
         </div>
       </div>
 
-      {/* Botón 3 puntos */}
+      {/* Botón 3 puntos → anclado arriba a la derecha */}
       <button
         onClick={handleToggleMenu}
         className="
+          shrink-0
           rounded-full
           w-7 h-7
           flex items-center justify-center
@@ -95,7 +109,7 @@ const TaskCard = ({ task, onEdit, onDelete }) => {
         <MoreVertical className="w-4 h-4 text-slate-400" />
       </button>
 
-      {/* Menú flotante alineado al botón + animación */}
+      {/* Menú flotante */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -104,13 +118,14 @@ const TaskCard = ({ task, onEdit, onDelete }) => {
             exit={{ opacity: 0, scale: 0.97 }}
             transition={{ duration: 0.16, ease: "easeOut" }}
             className="
-              absolute right-7 top-[56px]
-              -translate-y-1/2
-              bg-black/50 backdrop-blur-md  border border-borderGlass
+              absolute
+              right-3 top-10     /* ⬅ anclado siempre cerca del botón */
+              bg-black/60 backdrop-blur-md border border-borderGlass
               rounded-xl shadow-bubble
               py-1
               text-sm
               min-w-[140px]
+              origin-top-right   /* ⬅ animación desde arriba a la derecha */
             "
           >
             <button
@@ -134,6 +149,7 @@ const TaskCard = ({ task, onEdit, onDelete }) => {
 };
 
 export default TaskCard;
+
 
 
 

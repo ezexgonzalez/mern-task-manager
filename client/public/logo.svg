@@ -1,0 +1,61 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradiente del fondo dark del círculo -->
+    <radialGradient id="bgGradient" cx="30%" cy="10%" r="80%">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="40%" stop-color="#020617"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+
+    <!-- Halo interior tipo glass -->
+    <radialGradient id="haloGradient" cx="70%" cy="0%" r="90%">
+      <stop offset="0%" stop-color="#22c55e33"/>
+      <stop offset="50%" stop-color="#22c55e11"/>
+      <stop offset="100%" stop-color="#00000000"/>
+    </radialGradient>
+
+    <!-- Borde suave -->
+    <linearGradient id="strokeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff22"/>
+      <stop offset="50%" stop-color="#9ca3af22"/>
+      <stop offset="100%" stop-color="#22c55e55"/>
+    </linearGradient>
+
+    <!-- Check -->
+    <linearGradient id="checkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+
+    <!-- Clip circular para que todo quede redondo -->
+    <clipPath id="circleClip">
+      <circle cx="256" cy="256" r="230" />
+    </clipPath>
+  </defs>
+
+  <!-- Grupo clippeado al círculo -->
+  <g clip-path="url(#circleClip)">
+    <!-- Fondo glass -->
+    <circle cx="256" cy="256" r="230" fill="url(#bgGradient)" />
+    <circle cx="256" cy="256" r="230" fill="#ffffff08" />
+
+    <!-- Halo interior -->
+    <circle cx="256" cy="256" r="230" fill="url(#haloGradient)" />
+
+    <!-- Highlight arriba (reflejo glass) -->
+    <ellipse cx="230" cy="205" rx="150" ry="90" fill="#ffffff11"/>
+  </g>
+
+  <!-- Borde exterior -->
+  <circle cx="256" cy="256" r="228" fill="none" stroke="url(#strokeGradient)" stroke-width="8"/>
+
+  <!-- Check de tarea completada -->
+  <path
+    d="M176 264 L236 324 L344 216"
+    fill="none"
+    stroke="url(#checkGradient)"
+    stroke-width="30"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
