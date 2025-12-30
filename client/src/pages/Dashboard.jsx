@@ -24,9 +24,7 @@ const Dashboard = () => {
   const showToast = (message) => {
     setToast({ visible: true, message });
 
-    if (toastTimeoutRef.current) {
-      clearTimeout(toastTimeoutRef.current);
-    }
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
 
     toastTimeoutRef.current = setTimeout(() => {
       setToast({ visible: false, message: "" });
@@ -52,6 +50,14 @@ const Dashboard = () => {
     showToast("Tarea actualizada");
   };
 
+  // ✅ Nuevo: completar / reabrir rápido
+  const handleStatusChange = async (id, nextStatus) => {
+    await updateTask(id, { status: nextStatus });
+
+    if (nextStatus === "completed") showToast("Tarea completada ✅");
+    else showToast("Tarea reabierta");
+  };
+
   useEffect(() => {
     return () => {
       if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
@@ -62,13 +68,7 @@ const Dashboard = () => {
     <>
       <NavBar />
 
-      <main
-        className="
-          pt-10
-          flex flex-col 
-          gap-6
-        "
-      >
+      <main className="pt-10 flex flex-col gap-6">
         <section className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold text-white">
             Hola, {firstName} 👋
@@ -77,6 +77,7 @@ const Dashboard = () => {
             Esto es lo que tenés para hoy.
           </p>
         </section>
+
         <section>
           <TaskFormWrapper onSubmit={createTask} />
         </section>
@@ -84,8 +85,7 @@ const Dashboard = () => {
         <section className="flex flex-col gap-4">
           {error && (
             <p className="text-red-400 text-sm">
-              Error:{" "}
-              {error.message || "Ocurrió un problema al cargar las tareas."}
+              Error: {error.message || "Ocurrió un problema al cargar las tareas."}
             </p>
           )}
 
@@ -112,6 +112,7 @@ const Dashboard = () => {
                       task={task}
                       onDelete={handleDeleteTask}
                       onEdit={handleEditClick}
+                      onStatusChange={handleStatusChange}  // ✅ acá
                     />
                   ))}
                 </div>
@@ -121,10 +122,8 @@ const Dashboard = () => {
         </section>
       </main>
 
-      {/* Toast genérico */}
       <Toast show={toast.visible} message={toast.message} />
 
-      {/* Modal para editar */}
       <TaskEditModal
         isOpen={!!taskToEdit}
         task={taskToEdit}
@@ -136,3 +135,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
