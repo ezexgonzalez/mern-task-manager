@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import NavBar from "../components/layout/Navbar.jsx";
 import { useTasks } from "../hooks/useTasks.js";
 import TaskFormWrapper from "../components/TaskFormWrapper.jsx";
@@ -16,6 +16,28 @@ const Dashboard = () => {
   const firstName = user?.name?.split(" ")[0] || "Usuario";
 
   const [taskToEdit, setTaskToEdit] = useState(null);
+  //Ordenamos las tareas
+  const sortedTasks = useMemo(() => {
+    const rank = {
+      "in-progress": 0,
+      pending: 1,
+      completed: 2,
+    };
+
+    const getTime = (t) => {
+      const v = t.updatedAt || t.createdAt;
+      const ms = v ? new Date(v).getTime() : 0;
+      return Number.isFinite(ms) ? ms : 0;
+    };
+
+    return [...tasks].sort((a, b) => {
+      const ra = rank[a.status] ?? 99;
+      const rb = rank[b.status] ?? 99;
+
+      if (ra !== rb) return ra - rb;
+      return getTime(b) - getTime(a);
+    });
+  }, [tasks]);
 
   // estado genérico para cualquier toast
   const [toast, setToast] = useState({ visible: false, message: "" });
@@ -85,7 +107,8 @@ const Dashboard = () => {
         <section className="flex flex-col gap-4">
           {error && (
             <p className="text-red-400 text-sm">
-              Error: {error.message || "Ocurrió un problema al cargar las tareas."}
+              Error:{" "}
+              {error.message || "Ocurrió un problema al cargar las tareas."}
             </p>
           )}
 
@@ -106,13 +129,13 @@ const Dashboard = () => {
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {tasks.map((task) => (
+                  {sortedTasks.map((task) => (
                     <TaskCard
                       key={task._id}
                       task={task}
                       onDelete={handleDeleteTask}
                       onEdit={handleEditClick}
-                      onStatusChange={handleStatusChange}  // ✅ acá
+                      onStatusChange={handleStatusChange} // ✅ acá
                     />
                   ))}
                 </div>
@@ -135,4 +158,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
