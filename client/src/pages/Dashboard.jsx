@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
+import { Search, X } from "lucide-react";
 import NavBar from "../components/layout/Navbar.jsx";
 import { useTasks } from "../hooks/useTasks.js";
 import TaskFormWrapper from "../components/TaskFormWrapper.jsx";
@@ -26,6 +27,18 @@ const Dashboard = () => {
 
   // ✅ filtro por estado
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // ✅ búsqueda + debounce
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedQuery(query);
+    }, 250);
+
+    return () => clearTimeout(id);
+  }, [query]);
 
   // ✅ Ordenamos las tareas (estado + fecha)
   const sortedTasks = useMemo(() => {
@@ -61,11 +74,22 @@ const Dashboard = () => {
     return c;
   }, [tasks]);
 
-  // ✅ Lista final filtrada (mantiene orden)
-  const filteredTasks = useMemo(() => {
-    if (statusFilter === "all") return sortedTasks;
-    return sortedTasks.filter((t) => t.status === statusFilter);
-  }, [sortedTasks, statusFilter]);
+  // ✅ Lista final visible: orden -> filtro -> búsqueda (con debounce)
+  const visibleTasks = useMemo(() => {
+    const byStatus =
+      statusFilter === "all"
+        ? sortedTasks
+        : sortedTasks.filter((t) => t.status === statusFilter);
+
+    const q = debouncedQuery.trim().toLowerCase();
+    if (!q) return byStatus;
+
+    return byStatus.filter((t) => {
+      const title = (t.title || "").toLowerCase();
+      const desc = (t.description || "").toLowerCase();
+      return title.includes(q) || desc.includes(q);
+    });
+  }, [sortedTasks, statusFilter, debouncedQuery]);
 
   // estado genérico para cualquier toast
   const [toast, setToast] = useState({ visible: false, message: "" });
@@ -114,6 +138,8 @@ const Dashboard = () => {
     };
   }, []);
 
+  const hasQuery = debouncedQuery.trim().length > 0;
+
   return (
     <>
       <NavBar />
@@ -132,9 +158,10 @@ const Dashboard = () => {
           <TaskFormWrapper onSubmit={createTask} />
         </section>
 
-        {/* ✅ Chips de filtro (minimalistas) */}
+        {/* ✅ Chips + Search (integrado y dark/glass) */}
         {!loading && !error && tasks.length > 0 && (
-          <section>
+          <section className="flex flex-col gap-3">
+            {/* Chips primero */}
             <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {FILTERS.map((f) => {
                 const active = statusFilter === f.key;
@@ -144,34 +171,27 @@ const Dashboard = () => {
                     key={f.key}
                     onClick={() => setStatusFilter(f.key)}
                     className={`
-                      shrink-0
-                      rounded-full
-                      border
-                      px-3 py-1.5
-                      text-xs font-medium
-                      transition
-                      backdrop-blur-md
-                      ${
-                        active
-                          ? "bg-white/10 border-white/15 text-white"
-                          : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/8"
-                      }
-                    `}
+              shrink-0 rounded-full border px-3 py-1.5
+              text-xs font-medium transition backdrop-blur-md
+              ${
+                active
+                  ? "bg-white/10 border-white/15 text-white"
+                  : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/8"
+              }
+            `}
                     aria-pressed={active}
                   >
                     <span className="flex items-center gap-2">
                       {f.label}
                       <span
                         className={`
-                          rounded-full
-                          px-2 py-0.5
-                          text-[11px]
-                          ${
-                            active
-                              ? "bg-white/10 text-white/90"
-                              : "bg-white/5 text-slate-400"
-                          }
-                        `}
+                  rounded-full px-2 py-0.5 text-[11px]
+                  ${
+                    active
+                      ? "bg-white/10 text-white/90"
+                      : "bg-white/5 text-slate-400"
+                  }
+                `}
                       >
                         {counts[f.key]}
                       </span>
@@ -179,6 +199,62 @@ const Dashboard = () => {
                   </button>
                 );
               })}
+            </div>
+
+            {/* Search abajo (más chico y sin “blanco”) */}
+            <div className="w-full">
+              <div
+                className="
+      w-full
+      rounded-bubble
+      border border-white/10
+      bg-black/20
+      backdrop-blur-xl
+      px-4 py-2.5
+      flex items-center gap-3
+      shadow-bubble
+      transition
+      focus-within:border-white/20
+      focus-within:bg-black/25
+    "
+              >
+                <Search className="w-4 h-4 text-slate-400 shrink-0" />
+
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Buscar tareas..."
+                  className="
+        flex-1 min-w-0
+        bg-transparent outline-none appearance-none
+        text-sm text-slate-100
+        placeholder:text-slate-500
+      "
+                />
+
+                {/* SIEMPRE renderizado para que no cambie el layout */}
+                <button
+                  type="button"
+                  onClick={() => setQuery("")}
+                  className={`
+        shrink-0
+        rounded-full
+        w-7 h-7
+        flex items-center justify-center
+        text-slate-400 hover:text-slate-200
+        hover:bg-white/5 transition
+        ${
+          query.trim().length > 0
+            ? "opacity-100"
+            : "opacity-0 pointer-events-none"
+        }
+      `}
+                  aria-label="Limpiar búsqueda"
+                  tabIndex={query.trim().length > 0 ? 0 : -1}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </section>
         )}
@@ -206,19 +282,27 @@ const Dashboard = () => {
                     presioná Enter para crear tu primera tarea.
                   </p>
                 </div>
-              ) : filteredTasks.length === 0 ? (
+              ) : visibleTasks.length === 0 ? (
                 <div>
                   <p className="text-gray-400 font-medium">
-                    No hay tareas para este filtro.
+                    {hasQuery
+                      ? "No hay tareas que coincidan con tu búsqueda."
+                      : "No hay tareas para este filtro."}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Probá con <span className="font-medium">“Todas”</span> o
-                    creá una nueva tarea.
+                    {hasQuery ? (
+                      <>Probá con otra palabra o limpiá la búsqueda.</>
+                    ) : (
+                      <>
+                        Probá con <span className="font-medium">“Todas”</span> o
+                        creá una nueva tarea.
+                      </>
+                    )}
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {filteredTasks.map((task) => (
+                  {visibleTasks.map((task) => (
                     <TaskCard
                       key={task._id}
                       task={task}
