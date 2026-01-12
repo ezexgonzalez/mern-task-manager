@@ -27,9 +27,22 @@ const Dashboard = () => {
 
   const [taskToEdit, setTaskToEdit] = useState(null);
 
-  // ✅ filtros
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [showCompleted, setShowCompleted] = useState(true);
+  // ✅ filtros con persistencia en localStorage
+  const [statusFilter, setStatusFilter] = useState(() => {
+    return localStorage.getItem("tm_statusFilter") || "all";
+  });
+  const [showCompleted, setShowCompleted] = useState(() => {
+    const saved = localStorage.getItem("tm_showCompleted");
+    return saved === null ? true : saved === "true";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("tm_statusFilter", statusFilter);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    localStorage.setItem("tm_showCompleted", String(showCompleted));
+  }, [showCompleted]);
 
   // ✅ búsqueda + debounce
   const [query, setQuery] = useState("");
@@ -313,7 +326,9 @@ const Dashboard = () => {
                   `}
                   aria-pressed={!showCompleted}
                   title={
-                    showCompleted ? "Ocultar completadas" : "Mostrar completadas"
+                    showCompleted
+                      ? "Ocultar completadas"
+                      : "Mostrar completadas"
                   }
                 >
                   <span className="flex items-center gap-2">
@@ -477,4 +492,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
