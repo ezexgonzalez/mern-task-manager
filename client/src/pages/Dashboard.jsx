@@ -18,8 +18,10 @@ const FILTERS = [
   { key: "completed", label: "Completadas" },
 ];
 
+const VALID_FILTERS = FILTERS.map((f) => f.key); // ["all", "pending", "in-progress", "completed"]
+
 const Dashboard = () => {
-  const { tasks, loading, error, createTask, deleteTask, updateTask } =
+  const { tasks, isFetching, error, createTask, deleteTask, updateTask } =
     useTasks();
 
   const user = useAuthStore((state) => state.user);
@@ -27,9 +29,15 @@ const Dashboard = () => {
 
   const [taskToEdit, setTaskToEdit] = useState(null);
 
-  // ✅ filtros con persistencia en localStorage
+  // ✅ Filtros con persistencia Y VALIDACIÓN (Blindado)
   const [statusFilter, setStatusFilter] = useState(() => {
-    return localStorage.getItem("tm_statusFilter") || "all";
+    const saved = localStorage.getItem("tm_statusFilter");
+
+    // Preguntamos: ¿Lo que recuperé existe dentro de mis filtros válidos?
+    const isValid = VALID_FILTERS.includes(saved);
+
+    // Si es válido lo uso, si es basura (null, "false", "undefined"), uso "all"
+    return isValid ? saved : "all";
   });
   const [showCompleted, setShowCompleted] = useState(() => {
     const saved = localStorage.getItem("tm_showCompleted");
@@ -78,7 +86,12 @@ const Dashboard = () => {
 
   // ✅ Contadores para chips
   const counts = useMemo(() => {
-    const c = { all: tasks.length, pending: 0, "in-progress": 0, completed: 0 };
+    const c = {
+      all: tasks.length,
+      pending: 0,
+      "in-progress": 0,
+      completed: 0,
+    };
 
     for (const t of tasks) {
       if (c[t.status] !== undefined) c[t.status] += 1;
@@ -134,8 +147,12 @@ const Dashboard = () => {
 
   // ✅ CRUD handlers
   const handleDeleteTask = async (id) => {
-    await deleteTask(id);
-    showToast("Tarea eliminada");
+    try {
+      await deleteTask(id);
+      showToast("Tarea eliminada");
+    } catch {
+      showToast("No se pudo eliminar la tarea");
+    }
   };
 
   const handleEditClick = (task) => setTaskToEdit(task);
@@ -148,10 +165,25 @@ const Dashboard = () => {
   };
 
   const handleStatusChange = async (id, nextStatus) => {
-    await updateTask(id, { status: nextStatus });
+    try {
+      // 1️⃣ Llamamos directamente al hook.
+      // El hook ya se encarga de:
+      // - Actualizar la UI al instante (Optimistic)
+      // - Resolver el ID (server vs temp)
+      // - Hacer rollback si falla
+      await updateTask(id, { status: nextStatus });
 
-    if (nextStatus === "completed") showToast("Tarea completada ✅");
-    else showToast("Tarea reabierta");
+      // 2️⃣ Mostramos el mensaje de éxito correspondiente
+      if (nextStatus === "completed") {
+        showToast("Tarea completada ✅");
+      } else {
+        showToast("Tarea reabierta");
+      }
+    } catch (error) {
+      // 3️⃣ Si falla, el hook ya hizo el rollback del estado.
+      // Nosotros solo avisamos al usuario.
+      showToast("Error al actualizar la tarea");
+    }
   };
 
   // ✅ Si oculto completadas y estaba en filtro "completed", vuelvo a "all"
@@ -223,7 +255,7 @@ const Dashboard = () => {
     <>
       <NavBar />
 
-      <main className="pt-10 flex flex-col gap-6">
+      <main className="pt-10 pb-10 flex flex-col gap-6">
         <section className="flex flex-col gap-1">
           <h1 className="text-xl font-semibold text-white">
             Hola, {firstName} 👋
@@ -241,7 +273,7 @@ const Dashboard = () => {
         </section>
 
         {/* ✅ Chips + Search centrado */}
-        {!loading && !error && tasks.length > 0 && (
+        {!isFetching && !error && tasks.length > 0 && (
           <section className="flex flex-col gap-3">
             <div className="w-full max-w-[900px] mx-auto flex flex-col gap-3">
               {/* ✅ Chips (scroll horizontal en mobile) */}
@@ -265,28 +297,28 @@ const Dashboard = () => {
                         transition={{ duration: 0.16, ease: "easeOut" }}
                         onClick={() => setStatusFilter(f.key)}
                         className={`
-                          relative overflow-hidden transform-gpu
-                          shrink-0 rounded-full border px-3 py-1.5
-                          text-xs font-medium transition backdrop-blur-md
-                          ${
-                            active
-                              ? "bg-white/10 border-white/15 text-white"
-                              : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/8"
-                          }
-                        `}
+                        relative overflow-hidden transform-gpu
+                        shrink-0 rounded-full border px-3 py-1.5
+                        text-xs font-medium transition backdrop-blur-md
+                        ${
+                          active
+                            ? "bg-white/10 border-white/15 text-white"
+                            : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/8"
+                        }
+                      `}
                         aria-pressed={active}
                       >
                         <span className="flex items-center gap-2">
                           {f.label}
                           <span
                             className={`
-                              rounded-full px-2 py-0.5 text-[11px]
-                              ${
-                                active
-                                  ? "bg-white/10 text-white/90"
-                                  : "bg-white/5 text-slate-400"
-                              }
-                            `}
+                            rounded-full px-2 py-0.5 text-[11px]
+                            ${
+                              active
+                                ? "bg-white/10 text-white/90"
+                                : "bg-white/5 text-slate-400"
+                            }
+                          `}
                           >
                             {counts[f.key]}
                           </span>
@@ -302,28 +334,28 @@ const Dashboard = () => {
                   type="button"
                   onClick={handleToggleShowCompleted}
                   className={`
-                    relative overflow-hidden transform-gpu
-                    shrink-0
-                    border
-                    transition
-                    backdrop-blur-md
-                    flex items-center
+                  relative overflow-hidden transform-gpu
+                  shrink-0
+                  border
+                  transition
+                  backdrop-blur-md
+                  flex items-center
 
-                    /* Mobile: estable */
-                    w-10 h-9 justify-center rounded-full px-0
+                  /* Mobile */
+                  w-10 h-9 justify-center rounded-full px-0
 
-                    /* Desktop: igual a chips */
-                    sm:w-auto sm:h-auto sm:justify-start
-                    sm:rounded-full sm:px-3 sm:py-1.5
-                    sm:text-xs sm:font-medium
+                  /* Desktop */
+                  sm:w-auto sm:h-auto sm:justify-start
+                  sm:rounded-full sm:px-3 sm:py-1.5
+                  sm:text-xs sm:font-medium
 
-                    ${
-                      showCompleted
-                        ? "bg-black/30 border-white/10 text-slate-300 hover:bg-black/35"
-                        : "bg-white/10 border-white/20 text-white"
-                    }
-                    active:scale-95
-                  `}
+                  ${
+                    showCompleted
+                      ? "bg-black/30 border-white/10 text-slate-300 hover:bg-black/35"
+                      : "bg-white/10 border-white/20 text-white"
+                  }
+                  active:scale-95
+                `}
                   aria-pressed={!showCompleted}
                   title={
                     showCompleted
@@ -343,13 +375,7 @@ const Dashboard = () => {
                     </span>
 
                     {!showCompleted && (
-                      <span
-                        className="
-                          hidden sm:inline
-                          rounded-full px-2 py-0.5 text-[11px]
-                          bg-white/10 text-white/90
-                        "
-                      >
+                      <span className="hidden sm:inline rounded-full px-2 py-0.5 text-[11px] bg-white/10 text-white/90">
                         {counts.completed}
                       </span>
                     )}
@@ -361,19 +387,19 @@ const Dashboard = () => {
               <div className="w-full">
                 <div
                   className="
-                    w-full
-                    rounded-bubble
-                    border border-white/10
-                    bg-black/20
-                    backdrop-blur-xl
-                    px-4 py-2.5
-                    flex items-center gap-3
-                    shadow-bubble
-                    transition duration-200
-                    focus-within:border-white/20
-                    focus-within:bg-black/25
-                    focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_0_10px_rgba(99,102,241,0.12)]
-                  "
+                  w-full
+                  rounded-bubble
+                  border border-white/10
+                  bg-black/20
+                  backdrop-blur-xl
+                  px-4 py-2.5
+                  flex items-center gap-3
+                  shadow-bubble
+                  transition duration-200
+                  focus-within:border-white/20
+                  focus-within:bg-black/25
+                  focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_0_10px_rgba(99,102,241,0.12)]
+                "
                 >
                   <Search className="w-4 h-4 text-slate-400 shrink-0" />
 
@@ -382,30 +408,29 @@ const Dashboard = () => {
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Buscar tareas..."
                     className="
-                      flex-1 min-w-0
-                      bg-transparent outline-none appearance-none
-                      text-sm text-slate-100
-                      placeholder:text-slate-500
-                    "
+                    flex-1 min-w-0
+                    bg-transparent outline-none appearance-none
+                    text-sm text-slate-100
+                    placeholder:text-slate-500
+                  "
                   />
 
-                  {/* ✅ Siempre renderizado para no mover layout */}
                   <button
                     type="button"
                     onClick={() => setQuery("")}
                     className={`
-                      shrink-0
-                      rounded-full
-                      w-7 h-7
-                      flex items-center justify-center
-                      text-slate-400 hover:text-slate-200
-                      hover:bg-white/5 transition
-                      ${
-                        query.trim().length > 0
-                          ? "opacity-100"
-                          : "opacity-0 pointer-events-none"
-                      }
-                    `}
+                    shrink-0
+                    rounded-full
+                    w-7 h-7
+                    flex items-center justify-center
+                    text-slate-400 hover:text-slate-200
+                    hover:bg-white/5 transition
+                    ${
+                      query.trim().length > 0
+                        ? "opacity-100"
+                        : "opacity-0 pointer-events-none"
+                    }
+                  `}
                     aria-label="Limpiar búsqueda"
                     tabIndex={query.trim().length > 0 ? 0 : -1}
                   >
@@ -427,10 +452,11 @@ const Dashboard = () => {
               </p>
             )}
 
-            {loading && !error && <TaskListSkeleton />}
+            {isFetching && !error && <TaskListSkeleton />}
 
-            {!loading && !error && (
+            {!isFetching && !error && (
               <>
+                {/* 1. Si NO tiene ninguna tarea (Usuario nuevo) */}
                 {tasks.length === 0 ? (
                   <div>
                     <p className="text-gray-400 font-medium">
@@ -443,6 +469,7 @@ const Dashboard = () => {
                     </p>
                   </div>
                 ) : visibleTasks.length === 0 ? (
+                  /* 2. Si TIENE tareas, pero el filtro actual está vacío */
                   <div>
                     <p className="text-gray-400 font-medium">
                       {hasQuery
@@ -461,16 +488,35 @@ const Dashboard = () => {
                     </p>
                   </div>
                 ) : (
+                  /* 3. Si hay tareas para mostrar en este filtro */
                   <div className="flex flex-col gap-4">
-                    {visibleTasks.map((task) => (
-                      <TaskCard
-                        key={task._id}
-                        task={task}
-                        onDelete={handleDeleteTask}
-                        onEdit={handleEditClick}
-                        onStatusChange={handleStatusChange}
-                      />
-                    ))}
+                    <AnimatePresence initial={false}>
+                      {visibleTasks.map((task) => (
+                        <motion.div
+                          key={task._id}
+                          layout
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{
+                            opacity: 0,
+                            x: -40,
+                            filter: "blur(4px)",
+                            scale: 0.97,
+                          }}
+                          transition={{
+                            duration: 0.25,
+                            ease: "easeInOut",
+                          }}
+                        >
+                          <TaskCard
+                            task={task}
+                            onDelete={handleDeleteTask}
+                            onEdit={handleEditClick}
+                            onStatusChange={handleStatusChange}
+                          />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
                   </div>
                 )}
               </>
