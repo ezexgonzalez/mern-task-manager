@@ -21,13 +21,25 @@ const FILTERS = [
 const VALID_FILTERS = FILTERS.map((f) => f.key); // ["all", "pending", "in-progress", "completed"]
 
 const Dashboard = () => {
-  const { tasks, isFetching, error, createTask, deleteTask, updateTask } =
-    useTasks();
+  const {
+    tasks,
+    isFetching,
+    error,
+    createTask,
+    updateTask,
+    removeTaskLocal,
+    restoreTaskLocal,
+    deleteTaskServer,
+  } = useTasks();
 
   const user = useAuthStore((state) => state.user);
   const firstName = user?.name?.split(" ")[0] || "Usuario";
 
   const [taskToEdit, setTaskToEdit] = useState(null);
+
+  // ⏪ REFERENCIAS PARA UNDO (No provocan re-renders)
+  const undoTimeoutRef = useRef(null);
+  const pendingDeleteTaskRef = useRef(null);
 
   // ✅ Filtros con persistencia Y VALIDACIÓN (Blindado)
   const [statusFilter, setStatusFilter] = useState(() => {
@@ -126,7 +138,11 @@ const Dashboard = () => {
   }, [sortedTasks, statusFilter, showCompleted, debouncedQuery]);
 
   // ✅ Toast genérico
-  const [toast, setToast] = useState({ visible: false, message: "" });
+  const [toast, setToast] = useState({
+    visible: false,
+    message: "",
+    action: null,
+  });
   const toastTimeoutRef = useRef(null);
 
   const showToast = (message) => {
@@ -146,14 +162,83 @@ const Dashboard = () => {
   }, []);
 
   // ✅ CRUD handlers
-  const handleDeleteTask = async (id) => {
-    try {
-      await deleteTask(id);
-      showToast("Tarea eliminada");
-    } catch {
-      showToast("No se pudo eliminar la tarea");
+  // ✅ LÓGICA DE UNDO
+
+  // 1. Confirma el borrado (se ejecuta si pasa el tiempo o si el usuario cierra la app)
+  const commitPendingDelete = () => {
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+
+    if (pendingDeleteTaskRef.current) {
+      const task = pendingDeleteTaskRef.current;
+      // Usamos el ID del servidor si existe, sino el local
+      const idToDelete = task.serverId || task._id;
+
+      deleteTaskServer(idToDelete).catch((err) => {
+        console.error("Error al borrar definitivamente:", err);
+      });
+
+      pendingDeleteTaskRef.current = null;
     }
   };
+
+  // 2. El nuevo Handler de eliminar (Optimista + Timer)
+  const handleDeleteTask = (id) => {
+    // Si ya había una pendiente de borrar, la borramos ya mismo para no pisarla
+    commitPendingDelete();
+
+    const taskToDelete = tasks.find((t) => t._id === id);
+    if (!taskToDelete) return;
+
+    // Guardamos la tarea en el limbo
+    pendingDeleteTaskRef.current = taskToDelete;
+
+    // Borramos visualmente YA
+    removeTaskLocal(id);
+
+    // Mostramos Toast con botón DESHACER
+    // Nota: Limpiamos el timeout del toast anterior si existe
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+
+    setToast({
+      visible: true,
+      message: "Tarea eliminada",
+      action: { label: "Deshacer", onClick: handleUndoDelete }, // 👈 Pasamos la acción
+    });
+
+    // Iniciamos cuenta regresiva de 3.5 segundos
+    undoTimeoutRef.current = setTimeout(() => {
+      commitPendingDelete();
+      setToast((prev) => ({ ...prev, visible: false })); // Ocultar toast al terminar
+    }, 3500);
+  };
+
+  // 3. La función de Deshacer
+  const handleUndoDelete = () => {
+    // Cancelamos el borrado real
+    if (undoTimeoutRef.current) {
+      clearTimeout(undoTimeoutRef.current);
+      undoTimeoutRef.current = null;
+    }
+
+    // Restauramos la tarea visualmente
+    if (pendingDeleteTaskRef.current) {
+      restoreTaskLocal(pendingDeleteTaskRef.current);
+      pendingDeleteTaskRef.current = null;
+    }
+
+    // Cerramos el toast inmediatamente
+    setToast({ visible: false, message: "", action: null });
+  };
+
+  // 4. Seguridad: Si el usuario desmonta el componente, borramos lo pendiente
+  useEffect(() => {
+    return () => {
+      commitPendingDelete();
+    };
+  }, []);
 
   const handleEditClick = (task) => setTaskToEdit(task);
   const handleCloseEditModal = () => setTaskToEdit(null);
@@ -525,7 +610,11 @@ const Dashboard = () => {
         </section>
       </main>
 
-      <Toast show={toast.visible} message={toast.message} />
+      <Toast
+        show={toast.visible}
+        message={toast.message}
+        action={toast.action}
+      />
 
       <TaskEditModal
         isOpen={!!taskToEdit}
