@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 
-const Toast = ({ show, message }) => {
+const Toast = ({ show, message, action }) => {
   return (
     <AnimatePresence>
       {show && (
@@ -21,6 +21,22 @@ const Toast = ({ show, message }) => {
         >
           <CheckCircle2 className="w-5 h-5 text-green-400" />
           <span className="text-gray-100">{message}</span>
+          {action && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation(); // Buena práctica para evitar burbujeo
+                action.onClick();
+              }}
+              className="
+                ml-3 text-sm font-bold
+                text-indigo-400 hover:text-indigo-300
+                transition active:scale-95
+                underline decoration-transparent hover:decoration-indigo-300/50 underline-offset-4
+              "
+            >
+              {action.label}
+            </button>
+          )}
         </motion.div>
       )}
     </AnimatePresence>
