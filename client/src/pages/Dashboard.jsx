@@ -1,26 +1,25 @@
-import { useState, useRef, useEffect, useMemo, useLayoutEffect } from "react";
-import { Search, X, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 import NavBar from "../components/layout/Navbar.jsx";
-import { useTasks } from "../hooks/useTasks.js";
 import TaskFormWrapper from "../components/TaskFormWrapper.jsx";
 import TaskCard from "../components/TaskCard.jsx";
 import TaskListSkeleton from "../components/TaskListSkeleton.jsx";
 import Toast from "../components/Toast.jsx";
 import TaskEditModal from "../components/TaskEditModal.jsx";
+import TaskControls from "../components/TaskControls.jsx";
+
 import { useAuthStore } from "../store/useAuthStore.js";
-
-const FILTERS = [
-  { key: "all", label: "Todas" },
-  { key: "pending", label: "Pendientes" },
-  { key: "in-progress", label: "En progreso" },
-  { key: "completed", label: "Completadas" },
-];
-
-const VALID_FILTERS = FILTERS.map((f) => f.key); // ["all", "pending", "in-progress", "completed"]
+import { useTasks } from "../hooks/useTasks.js";
+import { useTaskFilters } from "../hooks/useTaskFilters.js";
+import { useToast } from "../hooks/useToast.js"; // ✅ Nuevo
+import { useUndoDelete } from "../hooks/useUndoDelete.js"; // ✅ Nuevo
 
 const Dashboard = () => {
+  // 1. Datos del usuario y tareas
+  const user = useAuthStore((state) => state.user);
+  const firstName = user?.name?.split(" ")[0] || "Usuario";
+
   const {
     tasks,
     isFetching,
@@ -32,214 +31,33 @@ const Dashboard = () => {
     deleteTaskServer,
   } = useTasks();
 
-  const user = useAuthStore((state) => state.user);
-  const firstName = user?.name?.split(" ")[0] || "Usuario";
+  // 2. Estado de UI (Filtros y Toast)
+  const {
+    statusFilter,
+    setStatusFilter,
+    showCompleted,
+    setShowCompleted,
+    query,
+    setQuery,
+    debouncedQuery,
+    visibleTasks,
+    counts,
+  } = useTaskFilters(tasks);
 
+  const { toast, showToast, hideToast } = useToast();
   const [taskToEdit, setTaskToEdit] = useState(null);
 
-  // ⏪ REFERENCIAS PARA UNDO (No provocan re-renders)
-  const undoTimeoutRef = useRef(null);
-  const pendingDeleteTaskRef = useRef(null);
-
-  // ✅ Filtros con persistencia Y VALIDACIÓN (Blindado)
-  const [statusFilter, setStatusFilter] = useState(() => {
-    const saved = localStorage.getItem("tm_statusFilter");
-
-    // Preguntamos: ¿Lo que recuperé existe dentro de mis filtros válidos?
-    const isValid = VALID_FILTERS.includes(saved);
-
-    // Si es válido lo uso, si es basura (null, "false", "undefined"), uso "all"
-    return isValid ? saved : "all";
-  });
-  const [showCompleted, setShowCompleted] = useState(() => {
-    const saved = localStorage.getItem("tm_showCompleted");
-    return saved === null ? true : saved === "true";
+  // 3. Lógica de Negocio (Undo Delete)
+  const { handleDeleteTask } = useUndoDelete({
+    tasks,
+    removeTaskLocal,
+    restoreTaskLocal,
+    deleteTaskServer,
+    showToast,
+    hideToast,
   });
 
-  useEffect(() => {
-    localStorage.setItem("tm_statusFilter", statusFilter);
-  }, [statusFilter]);
-
-  useEffect(() => {
-    localStorage.setItem("tm_showCompleted", String(showCompleted));
-  }, [showCompleted]);
-
-  // ✅ búsqueda + debounce
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
-
-  useEffect(() => {
-    const id = setTimeout(() => setDebouncedQuery(query), 250);
-    return () => clearTimeout(id);
-  }, [query]);
-
-  // ✅ Ordenamos tareas (estado primero + más recientes arriba)
-  const sortedTasks = useMemo(() => {
-    const rank = {
-      "in-progress": 0,
-      pending: 1,
-      completed: 2,
-    };
-
-    const getTime = (t) => {
-      const v = t.updatedAt || t.createdAt;
-      const ms = v ? new Date(v).getTime() : 0;
-      return Number.isFinite(ms) ? ms : 0;
-    };
-
-    return [...tasks].sort((a, b) => {
-      const ra = rank[a.status] ?? 99;
-      const rb = rank[b.status] ?? 99;
-
-      if (ra !== rb) return ra - rb;
-      return getTime(b) - getTime(a);
-    });
-  }, [tasks]);
-
-  // ✅ Contadores para chips
-  const counts = useMemo(() => {
-    const c = {
-      all: tasks.length,
-      pending: 0,
-      "in-progress": 0,
-      completed: 0,
-    };
-
-    for (const t of tasks) {
-      if (c[t.status] !== undefined) c[t.status] += 1;
-    }
-
-    return c;
-  }, [tasks]);
-
-  // ✅ Lista visible: orden -> filtro -> ocultar completadas -> búsqueda
-  const visibleTasks = useMemo(() => {
-    // 1) filtro por status
-    const byStatus =
-      statusFilter === "all"
-        ? sortedTasks
-        : sortedTasks.filter((t) => t.status === statusFilter);
-
-    // 2) ocultar completadas (si NO estoy en filtro "completed")
-    const byCompleted =
-      showCompleted || statusFilter === "completed"
-        ? byStatus
-        : byStatus.filter((t) => t.status !== "completed");
-
-    // 3) búsqueda
-    const q = debouncedQuery.trim().toLowerCase();
-    if (!q) return byCompleted;
-
-    return byCompleted.filter((t) => {
-      const title = (t.title || "").toLowerCase();
-      const desc = (t.description || "").toLowerCase();
-      return title.includes(q) || desc.includes(q);
-    });
-  }, [sortedTasks, statusFilter, showCompleted, debouncedQuery]);
-
-  // ✅ Toast genérico
-  const [toast, setToast] = useState({
-    visible: false,
-    message: "",
-    action: null,
-  });
-  const toastTimeoutRef = useRef(null);
-
-  const showToast = (message) => {
-    setToast({ visible: true, message });
-
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-
-    toastTimeoutRef.current = setTimeout(() => {
-      setToast({ visible: false, message: "" });
-    }, 2500);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-    };
-  }, []);
-
-  // ✅ CRUD handlers
-  // ✅ LÓGICA DE UNDO
-
-  // 1. Confirma el borrado (se ejecuta si pasa el tiempo o si el usuario cierra la app)
-  const commitPendingDelete = () => {
-    if (undoTimeoutRef.current) {
-      clearTimeout(undoTimeoutRef.current);
-      undoTimeoutRef.current = null;
-    }
-
-    if (pendingDeleteTaskRef.current) {
-      const task = pendingDeleteTaskRef.current;
-      // Usamos el ID del servidor si existe, sino el local
-      const idToDelete = task.serverId || task._id;
-
-      deleteTaskServer(idToDelete).catch((err) => {
-        console.error("Error al borrar definitivamente:", err);
-      });
-
-      pendingDeleteTaskRef.current = null;
-    }
-  };
-
-  // 2. El nuevo Handler de eliminar (Optimista + Timer)
-  const handleDeleteTask = (id) => {
-    // Si ya había una pendiente de borrar, la borramos ya mismo para no pisarla
-    commitPendingDelete();
-
-    const taskToDelete = tasks.find((t) => t._id === id);
-    if (!taskToDelete) return;
-
-    // Guardamos la tarea en el limbo
-    pendingDeleteTaskRef.current = taskToDelete;
-
-    // Borramos visualmente YA
-    removeTaskLocal(id);
-
-    // Mostramos Toast con botón DESHACER
-    // Nota: Limpiamos el timeout del toast anterior si existe
-    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
-
-    setToast({
-      visible: true,
-      message: "Tarea eliminada",
-      action: { label: "Deshacer", onClick: handleUndoDelete }, // 👈 Pasamos la acción
-    });
-
-    // Iniciamos cuenta regresiva de 3.5 segundos
-    undoTimeoutRef.current = setTimeout(() => {
-      commitPendingDelete();
-      setToast((prev) => ({ ...prev, visible: false })); // Ocultar toast al terminar
-    }, 3500);
-  };
-
-  // 3. La función de Deshacer
-  const handleUndoDelete = () => {
-    // Cancelamos el borrado real
-    if (undoTimeoutRef.current) {
-      clearTimeout(undoTimeoutRef.current);
-      undoTimeoutRef.current = null;
-    }
-
-    // Restauramos la tarea visualmente
-    if (pendingDeleteTaskRef.current) {
-      restoreTaskLocal(pendingDeleteTaskRef.current);
-      pendingDeleteTaskRef.current = null;
-    }
-
-    // Cerramos el toast inmediatamente
-    setToast({ visible: false, message: "", action: null });
-  };
-
-  // 4. Seguridad: Si el usuario desmonta el componente, borramos lo pendiente
-  useEffect(() => {
-    return () => {
-      commitPendingDelete();
-    };
-  }, []);
-
+  // 4. Handlers UI
   const handleEditClick = (task) => setTaskToEdit(task);
   const handleCloseEditModal = () => setTaskToEdit(null);
 
@@ -251,97 +69,24 @@ const Dashboard = () => {
 
   const handleStatusChange = async (id, nextStatus) => {
     try {
-      // 1️⃣ Llamamos directamente al hook.
-      // El hook ya se encarga de:
-      // - Actualizar la UI al instante (Optimistic)
-      // - Resolver el ID (server vs temp)
-      // - Hacer rollback si falla
       await updateTask(id, { status: nextStatus });
-
-      // 2️⃣ Mostramos el mensaje de éxito correspondiente
-      if (nextStatus === "completed") {
-        showToast("Tarea completada ✅");
-      } else {
-        showToast("Tarea reabierta");
-      }
-    } catch (error) {
-      // 3️⃣ Si falla, el hook ya hizo el rollback del estado.
-      // Nosotros solo avisamos al usuario.
+      showToast(
+        nextStatus === "completed" ? "Tarea completada ✅" : "Tarea reabierta",
+      );
+    } catch {
       showToast("Error al actualizar la tarea");
     }
   };
 
-  // ✅ Si oculto completadas y estaba en filtro "completed", vuelvo a "all"
-  useEffect(() => {
-    if (!showCompleted && statusFilter === "completed") {
-      setStatusFilter("all");
-    }
-  }, [showCompleted, statusFilter]);
-
   const hasQuery = debouncedQuery.trim().length > 0;
-
-  /**
-   * ✅ Mantener el scroll estable cuando "Completadas" reaparece
-   * - Guardamos la posición del scroll + la posición del toggle antes del cambio
-   * - Cuando el chip vuelve, compensamos scrollLeft para que el toggle no "se vaya"
-   */
-  const chipsScrollRef = useRef(null);
-  const toggleBtnRef = useRef(null);
-  const snapRef = useRef(null);
-  const prevShowRef = useRef(showCompleted);
-
-  const handleToggleShowCompleted = () => {
-    const c = chipsScrollRef.current;
-    const t = toggleBtnRef.current;
-    const isScrollable = c && c.scrollWidth > c.clientWidth;
-
-    // Si estamos por "mostrar" completadas (viene el chip) y la fila es scrolleable,
-    // guardamos el estado actual para compensar luego.
-    if (!showCompleted && isScrollable && c && t) {
-      snapRef.current = {
-        scrollLeft: c.scrollLeft,
-        toggleOffsetLeft: t.offsetLeft,
-      };
-    }
-
-    // Si estamos por "ocultar" completadas y estaba seleccionado "completed",
-    // evitamos flicker cambiando filtro primero.
-    if (showCompleted && statusFilter === "completed") {
-      setStatusFilter("all");
-    }
-
-    setShowCompleted((v) => !v);
-  };
-
-  useLayoutEffect(() => {
-    const c = chipsScrollRef.current;
-    const t = toggleBtnRef.current;
-    const isScrollable = c && c.scrollWidth > c.clientWidth;
-
-    const wasHidden = prevShowRef.current === false;
-    const nowShown = showCompleted === true;
-
-    // Cuando reaparece el chip: compensamos scroll para mantener "estable" la vista
-    if (wasHidden && nowShown && isScrollable && snapRef.current && c && t) {
-      const { scrollLeft, toggleOffsetLeft } = snapRef.current;
-
-      const newToggleOffsetLeft = t.offsetLeft;
-      const delta = newToggleOffsetLeft - toggleOffsetLeft;
-
-      c.scrollLeft = scrollLeft + delta;
-
-      snapRef.current = null;
-    }
-
-    prevShowRef.current = showCompleted;
-  }, [showCompleted]);
 
   return (
     <>
       <NavBar />
 
       <main className="pt-10 pb-10 flex flex-col gap-6">
-        <section className="flex flex-col gap-1">
+        {/* Header */}
+        <section className="flex flex-col gap-1 w-full max-w-[900px] mx-auto px-4 sm:px-0">
           <h1 className="text-xl font-semibold text-white">
             Hola, {firstName} 👋
           </h1>
@@ -350,263 +95,82 @@ const Dashboard = () => {
           </p>
         </section>
 
-        {/* ✅ Form centrado */}
-        <section>
-          <div className="w-full max-w-[900px] mx-auto">
-            <TaskFormWrapper onSubmit={createTask} />
-          </div>
+        {/* Formulario */}
+        <section className="w-full max-w-[900px] mx-auto px-4 sm:px-0">
+          <TaskFormWrapper onSubmit={createTask} />
         </section>
 
-        {/* ✅ Chips + Search centrado */}
+        {/* Controles de Filtro */}
         {!isFetching && !error && tasks.length > 0 && (
-          <section className="flex flex-col gap-3">
-            <div className="w-full max-w-[900px] mx-auto flex flex-col gap-3">
-              {/* ✅ Chips (scroll horizontal en mobile) */}
-              <div
-                ref={chipsScrollRef}
-                className="flex items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                <AnimatePresence initial={false}>
-                  {FILTERS.filter((f) =>
-                    showCompleted ? true : f.key !== "completed"
-                  ).map((f) => {
-                    const active = statusFilter === f.key;
-
-                    return (
-                      <motion.button
-                        key={f.key}
-                        layout
-                        initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                        transition={{ duration: 0.16, ease: "easeOut" }}
-                        onClick={() => setStatusFilter(f.key)}
-                        className={`
-                        relative overflow-hidden transform-gpu
-                        shrink-0 rounded-full border px-3 py-1.5
-                        text-xs font-medium transition backdrop-blur-md
-                        ${
-                          active
-                            ? "bg-white/10 border-white/15 text-white"
-                            : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/8"
-                        }
-                      `}
-                        aria-pressed={active}
-                      >
-                        <span className="flex items-center gap-2">
-                          {f.label}
-                          <span
-                            className={`
-                            rounded-full px-2 py-0.5 text-[11px]
-                            ${
-                              active
-                                ? "bg-white/10 text-white/90"
-                                : "bg-white/5 text-slate-400"
-                            }
-                          `}
-                          >
-                            {counts[f.key]}
-                          </span>
-                        </span>
-                      </motion.button>
-                    );
-                  })}
-                </AnimatePresence>
-
-                {/* ✅ Toggle (misma fila, NO pinned) */}
-                <button
-                  ref={toggleBtnRef}
-                  type="button"
-                  onClick={handleToggleShowCompleted}
-                  className={`
-                  relative overflow-hidden transform-gpu
-                  shrink-0
-                  border
-                  transition
-                  backdrop-blur-md
-                  flex items-center
-
-                  /* Mobile */
-                  w-10 h-9 justify-center rounded-full px-0
-
-                  /* Desktop */
-                  sm:w-auto sm:h-auto sm:justify-start
-                  sm:rounded-full sm:px-3 sm:py-1.5
-                  sm:text-xs sm:font-medium
-
-                  ${
-                    showCompleted
-                      ? "bg-black/30 border-white/10 text-slate-300 hover:bg-black/35"
-                      : "bg-white/10 border-white/20 text-white"
-                  }
-                  active:scale-95
-                `}
-                  aria-pressed={!showCompleted}
-                  title={
-                    showCompleted
-                      ? "Ocultar completadas"
-                      : "Mostrar completadas"
-                  }
-                >
-                  <span className="flex items-center gap-2">
-                    {showCompleted ? (
-                      <EyeOff className="w-4 h-4 text-slate-300" />
-                    ) : (
-                      <Eye className="w-4 h-4 text-slate-200" />
-                    )}
-
-                    <span className="hidden sm:inline leading-none">
-                      {showCompleted ? "Ocultar" : "Mostrar"} completadas
-                    </span>
-
-                    {!showCompleted && (
-                      <span className="hidden sm:inline rounded-full px-2 py-0.5 text-[11px] bg-white/10 text-white/90">
-                        {counts.completed}
-                      </span>
-                    )}
-                  </span>
-                </button>
-              </div>
-
-              {/* ✅ Search */}
-              <div className="w-full">
-                <div
-                  className="
-                  w-full
-                  rounded-bubble
-                  border border-white/10
-                  bg-black/20
-                  backdrop-blur-xl
-                  px-4 py-2.5
-                  flex items-center gap-3
-                  shadow-bubble
-                  transition duration-200
-                  focus-within:border-white/20
-                  focus-within:bg-black/25
-                  focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_0_10px_rgba(99,102,241,0.12)]
-                "
-                >
-                  <Search className="w-4 h-4 text-slate-400 shrink-0" />
-
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Buscar tareas..."
-                    className="
-                    flex-1 min-w-0
-                    bg-transparent outline-none appearance-none
-                    text-sm text-slate-100
-                    placeholder:text-slate-500
-                  "
-                  />
-
-                  <button
-                    type="button"
-                    onClick={() => setQuery("")}
-                    className={`
-                    shrink-0
-                    rounded-full
-                    w-7 h-7
-                    flex items-center justify-center
-                    text-slate-400 hover:text-slate-200
-                    hover:bg-white/5 transition
-                    ${
-                      query.trim().length > 0
-                        ? "opacity-100"
-                        : "opacity-0 pointer-events-none"
-                    }
-                  `}
-                    aria-label="Limpiar búsqueda"
-                    tabIndex={query.trim().length > 0 ? 0 : -1}
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
+          <div className="w-full max-w-[900px] mx-auto px-4 sm:px-0">
+            <TaskControls
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              showCompleted={showCompleted}
+              setShowCompleted={setShowCompleted}
+              query={query}
+              setQuery={setQuery}
+              counts={counts}
+            />
+          </div>
         )}
 
-        {/* ✅ Lista centrada */}
-        <section className="flex flex-col gap-4">
-          <div className="w-full max-w-[900px] mx-auto flex flex-col gap-4">
-            {error && (
-              <p className="text-red-400 text-sm">
-                Error:{" "}
-                {error.message || "Ocurrió un problema al cargar las tareas."}
-              </p>
-            )}
+        {/* Lista de Tareas */}
+        <section className="flex flex-col gap-4 w-full max-w-[900px] mx-auto px-4 sm:px-0">
+          {error && (
+            <p className="text-red-400 text-sm">Error: {error.message}</p>
+          )}
+          {isFetching && !error && <TaskListSkeleton />}
 
-            {isFetching && !error && <TaskListSkeleton />}
-
-            {!isFetching && !error && (
-              <>
-                {/* 1. Si NO tiene ninguna tarea (Usuario nuevo) */}
-                {tasks.length === 0 ? (
-                  <div>
-                    <p className="text-gray-400 font-medium">
-                      Todavía no tenés tareas.
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Escribí una idea arriba en{" "}
-                      <span className="font-medium">“¿Alguna idea nueva?”</span>{" "}
-                      y presioná Enter para crear tu primera tarea.
-                    </p>
-                  </div>
-                ) : visibleTasks.length === 0 ? (
-                  /* 2. Si TIENE tareas, pero el filtro actual está vacío */
-                  <div>
-                    <p className="text-gray-400 font-medium">
-                      {hasQuery
-                        ? "No hay tareas que coincidan con tu búsqueda."
-                        : "No hay tareas para este filtro."}
-                    </p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {hasQuery ? (
-                        <>Probá con otra palabra o limpiá la búsqueda.</>
-                      ) : (
-                        <>
-                          Probá con <span className="font-medium">“Todas”</span>{" "}
-                          o creá una nueva tarea.
-                        </>
-                      )}
-                    </p>
-                  </div>
-                ) : (
-                  /* 3. Si hay tareas para mostrar en este filtro */
-                  <div className="flex flex-col gap-4">
-                    <AnimatePresence initial={false}>
-                      {visibleTasks.map((task) => (
-                        <motion.div
-                          key={task._id}
-                          layout
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{
-                            opacity: 0,
-                            x: -40,
-                            filter: "blur(4px)",
-                            scale: 0.97,
-                          }}
-                          transition={{
-                            duration: 0.25,
-                            ease: "easeInOut",
-                          }}
-                        >
-                          <TaskCard
-                            task={task}
-                            onDelete={handleDeleteTask}
-                            onEdit={handleEditClick}
-                            onStatusChange={handleStatusChange}
-                          />
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          {!isFetching && !error && (
+            <>
+              {tasks.length === 0 ? (
+                <div>
+                  <p className="text-gray-400 font-medium">
+                    Todavía no tenés tareas.
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Escribí una idea arriba y presioná Enter.
+                  </p>
+                </div>
+              ) : visibleTasks.length === 0 ? (
+                <div>
+                  <p className="text-gray-400 font-medium">
+                    {hasQuery
+                      ? "No hay tareas que coincidan."
+                      : "No hay tareas para este filtro."}
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  <AnimatePresence initial={false}>
+                    {visibleTasks.map((task) => (
+                      <motion.div
+                        key={task._id}
+                        layout
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{
+                          opacity: 0,
+                          x: -40,
+                          filter: "blur(4px)",
+                          scale: 0.97,
+                        }}
+                        transition={{ duration: 0.25, ease: "easeInOut" }}
+                      >
+                        <TaskCard
+                          task={task}
+                          onDelete={handleDeleteTask}
+                          onEdit={handleEditClick}
+                          onStatusChange={handleStatusChange}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </>
+          )}
         </section>
       </main>
 
