@@ -80,8 +80,8 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
           isPending
             ? "bg-glassLight border border-white/30 cursor-wait shadow-[0_0_15px_rgba(255,255,255,0.05)]" // Pending: Borde más claro y brillo sutil
             : isCompleted
-            ? "opacity-60 bg-glassLight border border-borderGlass" // Completed: Apagado
-            : "bg-glassLight border border-borderGlass backdrop-blur-md hover:bg-glassMedium hover:border-glassMedium hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(0,0,0,0.55)]" // Normal
+              ? "opacity-60 bg-glassLight border border-borderGlass" // Completed: Apagado
+              : "bg-glassLight border border-borderGlass backdrop-blur-md hover:bg-glassMedium hover:border-glassMedium hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(0,0,0,0.55)]" // Normal
         }
         
         group
@@ -129,14 +129,16 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
             {task.title}
           </h3>
 
-          <p
-            className={`
-              text-sm mt-1 break-words transition-colors
-              ${isCompleted ? "text-slate-500" : "text-slate-400"}
-            `}
-          >
-            {task.description || "Descripción opcional"}
-          </p>
+          {task.description?.trim() && (
+            <p
+              className={`
+      text-sm mt-1 break-words transition-colors
+      ${isCompleted ? "text-slate-500" : "text-slate-400"}
+    `}
+            >
+              {task.description}
+            </p>
+          )}
         </div>
       </div>
 
