@@ -13,6 +13,7 @@ const schema = yup.object().shape({
     .string()
     .oneOf(["pending", "in-progress", "completed"])
     .required(),
+  priority: yup.string().oneOf(["low", "medium", "high"]).required(),
   color: yup.string().required(),
 });
 
@@ -36,6 +37,7 @@ const TaskForm = ({
       title: initialTask?.title || titleValue || "",
       description: initialTask?.description || "",
       status: initialTask?.status || "pending",
+      priority: initialTask?.priority || "medium",
       color: initialTask?.color || "#ffffff",
     },
   });
@@ -45,6 +47,8 @@ const TaskForm = ({
 
   const [statusOpen, setStatusOpen] = useState(false);
   const status = watch("status");
+  const [priorityOpen, setPriorityOpen] = useState(false);
+  const priority = watch("priority");
 
   const descriptionRef = useRef(null);
 
@@ -62,9 +66,11 @@ const TaskForm = ({
       title: "",
       description: "",
       status: "pending",
+      priority: "medium",
       color: "#ffffff",
     });
     setStatusOpen(false);
+    setPriorityOpen(false);
 
     if (descriptionRef.current) {
       descriptionRef.current.style.height = "";
@@ -76,6 +82,32 @@ const TaskForm = ({
     { value: "in-progress", label: "En progreso", dotClass: "bg-progress" },
     { value: "completed", label: "Completada", dotClass: "bg-success" },
   ];
+
+  const allPriorityOptions = [
+    {
+      value: "low",
+      label: "Baja",
+      dotClass: "bg-slate-400",
+    },
+    {
+      value: "medium",
+      label: "Media",
+      dotClass: "bg-yellow-400",
+    },
+    {
+      value: "high",
+      label: "Alta",
+      dotClass: "bg-red-400",
+    },
+  ];
+
+  const currentPriority =
+    allPriorityOptions.find((opt) => opt.value === priority) ||
+    allPriorityOptions[1];
+
+  const visiblePriorityOptions = allPriorityOptions.filter(
+    (opt) => opt.value !== priority,
+  );
 
   const current =
     allStatusOptions.find((opt) => opt.value === status) || allStatusOptions[0];
@@ -222,14 +254,94 @@ const TaskForm = ({
           )}
         </AnimatePresence>
       </div>
+      {/* PRIORITY */}
+      <div className="flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setPriorityOpen((prev) => !prev)}
+          className="
+      w-full px-4 py-3
+      bg-glassLight backdrop-blur-md
+      rounded-bubble border border-borderGlass
+      text-gray-200
+      flex items-center justify-between gap-3
+      shadow-bubble
+      focus:outline-none focus:ring-2 focus:ring-glassMedium
+      transition
+    "
+        >
+          <div className="flex items-center gap-3">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${currentPriority.dotClass}`}
+            />
+            <span>Prioridad {currentPriority.label}</span>
+          </div>
 
+          <ChevronDown
+            size={18}
+            className={`transition-transform ${
+              priorityOpen ? "rotate-180" : "rotate-0"
+            }`}
+          />
+        </button>
+
+        <input type="hidden" {...register("priority")} />
+
+        <AnimatePresence>
+          {priorityOpen && (
+            <motion.div
+              layout
+              initial={{ height: 0, opacity: 0, y: -4 }}
+              animate={{ height: "auto", opacity: 1, y: 0 }}
+              exit={{ height: 0, opacity: 0, y: -4 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className="
+          bg-glassLight backdrop-blur-md
+          rounded-bubble border border-borderGlass
+          shadow-bubble overflow-hidden
+        "
+            >
+              {visiblePriorityOptions.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    setValue("priority", opt.value, { shouldValidate: true });
+                    setPriorityOpen(false);
+                  }}
+                  className="
+              w-full px-4 py-3
+              flex items-center justify-between gap-3
+              text-gray-200 text-sm
+              hover:bg-glassMedium/80
+              transition
+            "
+                >
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${opt.dotClass}`}
+                    />
+                    <span>{opt.label}</span>
+                  </div>
+
+                  {priority === opt.value && (
+                    <Check size={16} className="text-success" />
+                  )}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       {/* COLOR oculto */}
       <input type="color" {...register("color")} className="hidden" />
 
       {errors.status && (
         <p className="text-red-400 text-xs">{errors.status.message}</p>
       )}
-
+      {errors.priority && (
+        <p className="text-red-400 text-xs">{errors.priority.message}</p>
+      )}
       <div className="flex justify-end mt-1">
         <button
           type="submit"

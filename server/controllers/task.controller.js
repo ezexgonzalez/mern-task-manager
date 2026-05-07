@@ -2,22 +2,25 @@ import Task from "../models/Task.js";
 
 export const createTask = async (req, res) => {
   try {
-    const { title, description, status, color } = req.body;
+    const { title, description, status, color, priority } = req.body;
     const userId = req.user.id;
+
     if (!title || title.trim() === "") {
       return res.status(400).json({ message: "El titulo es obligatorio" });
     }
+
     const newTask = await Task.create({
-      title,
-      description,
+      title: title.trim(),
+      description: description?.trim() || "",
       status,
       color,
+      priority,
       user: userId,
     });
 
     return res
       .status(201)
-      .json({ message: "Tarea creada correctamante", task: newTask });
+      .json({ message: "Tarea creada correctamente", task: newTask });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Error interno del servidor" });
@@ -64,21 +67,43 @@ export const getTaskById = async (req, res) => {
 export const updateTask = async (req, res) => {
   try {
     const taskId = req.params.id;
-    const { title, description, status, color } = req.body;
+    const { title, description, status, color, priority } = req.body;
+
     const task = await Task.findById(taskId);
+
     if (!task) {
       return res.status(404).json({ message: "La tarea no existe" });
     }
+
     if (task.user.toString() !== req.user.id) {
       return res
         .status(403)
         .json({ message: "No tiene permiso para editar esta tarea" });
     }
 
-    task.title = title || task.title;
-    task.description = description || task.description;
-    task.status = status || task.status;
-    task.color = color || task.color;
+    if (title !== undefined) {
+      if (title.trim() === "") {
+        return res.status(400).json({ message: "El titulo es obligatorio" });
+      }
+
+      task.title = title.trim();
+    }
+
+    if (description !== undefined) {
+      task.description = description.trim();
+    }
+
+    if (status !== undefined) {
+      task.status = status;
+    }
+
+    if (color !== undefined) {
+      task.color = color;
+    }
+
+    if (priority !== undefined) {
+      task.priority = priority;
+    }
 
     await task.save();
 
