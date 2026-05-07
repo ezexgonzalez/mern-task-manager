@@ -8,8 +8,24 @@ const STATUS_DOT_COLOR = {
   completed: "bg-success",
 };
 
+const PRIORITY_LABEL = {
+  low: "Baja",
+  medium: "Media",
+  high: "Alta",
+};
+
+const PRIORITY_CLASS = {
+  low: "text-slate-400 border-slate-500/20 bg-slate-500/5",
+  medium: "text-amber-300/90 border-amber-400/20 bg-amber-400/5",
+  high: "text-red-300/90 border-red-400/20 bg-red-400/5",
+};
+
 const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
   const dotClass = STATUS_DOT_COLOR[task.status] || "bg-warning";
+
+  const priority = task.priority || "medium";
+  const priorityLabel = PRIORITY_LABEL[priority] || "Media";
+  const priorityClass = PRIORITY_CLASS[priority] || PRIORITY_CLASS.medium;
 
   const isCompleted = task.status === "completed";
   const isPending = task.isPending === true;
@@ -32,28 +48,27 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
     setIsMenuOpen(false);
     onDelete?.(task._id);
   };
+
   const handleToggleComplete = () => {
     if (isPending) return;
 
     setIsMenuOpen(false);
     const nextStatus = isCompleted ? "pending" : "completed";
 
-    // 🔴 ANTES (El error):
-    // const idToUpdate = task.serverId ?? task._id;
-
-    // 🟢 AHORA (La solución):
-    // Enviamos siempre el _id local. El hook useTasks ya sabe qué hacer con él.
     onStatusChange?.(task._id, nextStatus);
   };
 
   useEffect(() => {
     if (!isMenuOpen) return;
+
     const handleClickOutside = (event) => {
       if (cardRef.current && !cardRef.current.contains(event.target)) {
         setIsMenuOpen(false);
       }
     };
+
     document.addEventListener("mousedown", handleClickOutside);
+
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isMenuOpen]);
 
@@ -62,35 +77,24 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
       ref={cardRef}
       className={`
         relative w-full
-        /* Estilos base Glass */
         rounded-bubble 
         shadow-bubble px-5 py-4
         transition-all duration-300 ease-out
         flex justify-between items-start gap-3
-        
-        /* 🔥 Z-INDEX HANDLING:
-           Si el menú está abierto, z-50.
-           Si no, z-0.
-           Esto asegura que el menú flote sobre las otras cards.
-        */
+
         ${isMenuOpen ? "z-50" : "z-0"}
 
-        /* 🎨 ESTADOS VISUALES */
         ${
           isPending
-            ? "bg-glassLight border border-white/30 cursor-wait shadow-[0_0_15px_rgba(255,255,255,0.05)]" // Pending: Borde más claro y brillo sutil
+            ? "bg-glassLight border border-white/30 cursor-wait shadow-[0_0_15px_rgba(255,255,255,0.05)]"
             : isCompleted
-              ? "opacity-60 bg-glassLight border border-borderGlass" // Completed: Apagado
-              : "bg-glassLight border border-borderGlass backdrop-blur-md hover:bg-glassMedium hover:border-glassMedium hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(0,0,0,0.55)]" // Normal
+              ? "opacity-60 bg-glassLight border border-borderGlass"
+              : "bg-glassLight border border-borderGlass backdrop-blur-md hover:bg-glassMedium hover:border-glassMedium hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(0,0,0,0.55)]"
         }
-        
+
         group
       `}
     >
-      {/* ✨ ANIMACIÓN "BREATHING" (Respiración)
-         Solo si está pending. Usamos un div absoluto inset para animar el borde/fondo 
-         sin afectar el layout, pero SIN overflow-hidden para no matar el menú.
-      */}
       {isPending && (
         <motion.div
           layoutId={`pulse-${task._id}`}
@@ -105,9 +109,7 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
         />
       )}
 
-      {/* Contenido (z-10 para asegurar clickabilidad sobre cualquier efecto) */}
       <div className="flex items-start gap-3 flex-1 min-w-0 z-10 relative">
-        {/* ICONO: Si está pending mostramos un Spinner, si no, el punto de color */}
         <div className="mt-1 shrink-0 w-3 h-3 flex items-center justify-center">
           {isPending ? (
             <Loader2 className="w-3 h-3 text-white/50 animate-spin" />
@@ -119,22 +121,34 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
         </div>
 
         <div className="flex flex-col min-w-0">
-          <h3
-            className={`
-              text-gray-100 font-semibold text-base leading-snug transition-colors
-              ${isCompleted ? "line-through text-gray-200/80" : ""}
-              /* Si es pending, el texto es solido (no opaco) */
-            `}
-          >
-            {task.title}
-          </h3>
+          <div className="flex items-center gap-2 min-w-0">
+            <h3
+              className={`
+                text-gray-100 font-semibold text-base leading-snug transition-colors truncate
+                ${isCompleted ? "line-through text-gray-200/80" : ""}
+              `}
+            >
+              {task.title}
+            </h3>
+
+            <span
+              className={`
+                shrink-0 text-[10px]
+                px-2 py-0.5 rounded-full border
+                font-medium uppercase tracking-[0.08em]
+                ${priorityClass}
+              `}
+            >
+              {priorityLabel}
+            </span>
+          </div>
 
           {task.description?.trim() && (
             <p
               className={`
-      text-sm mt-1 break-words transition-colors
-      ${isCompleted ? "text-slate-500" : "text-slate-400"}
-    `}
+                text-sm mt-1 break-words transition-colors
+                ${isCompleted ? "text-slate-500" : "text-slate-400"}
+              `}
             >
               {task.description}
             </p>
@@ -142,7 +156,6 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
         </div>
       </div>
 
-      {/* Botón 3 puntos */}
       {!isPending && (
         <button
           onClick={handleToggleMenu}
@@ -158,7 +171,6 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
         </button>
       )}
 
-      {/* Menú flotante */}
       <AnimatePresence>
         {isMenuOpen && !isPending && (
           <motion.div
