@@ -14,6 +14,7 @@ const schema = yup.object().shape({
     .oneOf(["pending", "in-progress", "completed"])
     .required(),
   priority: yup.string().oneOf(["low", "medium", "high"]).required(),
+  dueDate: yup.string().nullable(),
   color: yup.string().required(),
 });
 
@@ -39,6 +40,7 @@ const TaskForm = ({
       status: initialTask?.status || "pending",
       priority: initialTask?.priority || "medium",
       color: initialTask?.color || "#ffffff",
+      dueDate: initialTask?.dueDate ? initialTask.dueDate.split("T")[0] : "",
     },
   });
 
@@ -67,6 +69,7 @@ const TaskForm = ({
       description: "",
       status: "pending",
       priority: "medium",
+      dueDate: "",
       color: "#ffffff",
     });
     setStatusOpen(false);
@@ -332,6 +335,28 @@ const TaskForm = ({
             </motion.div>
           )}
         </AnimatePresence>
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="text-sm text-slate-300">Fecha límite</label>
+
+        <input
+          type="date"
+          {...register("dueDate")}
+          className="
+      w-full px-4 py-3
+      bg-glassLight backdrop-blur-md
+      rounded-bubble border border-borderGlass
+      text-gray-200
+      shadow-bubble
+      focus:outline-none focus:ring-2 focus:ring-glassMedium
+      transition
+      [color-scheme:dark]
+    "
+        />
+
+        {errors.dueDate && (
+          <p className="text-red-400 text-xs">{errors.dueDate.message}</p>
+        )}
       </div>
       {/* COLOR oculto */}
       <input type="color" {...register("color")} className="hidden" />

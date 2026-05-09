@@ -20,6 +20,54 @@ const PRIORITY_CLASS = {
   high: "text-red-300/90 border-red-400/20 bg-red-400/5",
 };
 
+const getDueDateInfo = (dueDate) => {
+  if (!dueDate) return null;
+
+  const today = new Date();
+
+  const dateOnly =
+    typeof dueDate === "string" ? dueDate.split("T")[0] : dueDate;
+
+  const [year, month, day] = dateOnly.split("-").map(Number);
+
+  const taskDate = new Date(year, month - 1, day);
+
+  today.setHours(0, 0, 0, 0);
+  taskDate.setHours(0, 0, 0, 0);
+
+  const diffTime = taskDate.getTime() - today.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return {
+      label: "Vencida",
+      className: "text-red-300 border-red-400/20 bg-red-400/5",
+    };
+  }
+
+  if (diffDays === 0) {
+    return {
+      label: "Vence hoy",
+      className: "text-amber-300 border-amber-400/20 bg-amber-400/5",
+    };
+  }
+
+  if (diffDays === 1) {
+    return {
+      label: "Vence mañana",
+      className: "text-yellow-300 border-yellow-400/20 bg-yellow-400/5",
+    };
+  }
+
+  return {
+    label: `Vence ${taskDate.toLocaleDateString("es-AR", {
+      day: "2-digit",
+      month: "2-digit",
+    })}`,
+    className: "text-slate-400 border-slate-500/20 bg-slate-500/5",
+  };
+};
+
 const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
   const dotClass = STATUS_DOT_COLOR[task.status] || "bg-warning";
 
@@ -57,6 +105,8 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
 
     onStatusChange?.(task._id, nextStatus);
   };
+
+  const dueDateInfo = getDueDateInfo(task.dueDate);
 
   useEffect(() => {
     if (!isMenuOpen) return;
@@ -142,7 +192,18 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
               {priorityLabel}
             </span>
           </div>
-
+          {dueDateInfo && (
+            <span
+              className={`
+      mt-1 w-fit text-[10px]
+      px-2 py-0.5 rounded-full border
+      font-medium tracking-[0.04em]
+      ${dueDateInfo.className}
+    `}
+            >
+              {dueDateInfo.label}
+            </span>
+          )}
           {task.description?.trim() && (
             <p
               className={`
