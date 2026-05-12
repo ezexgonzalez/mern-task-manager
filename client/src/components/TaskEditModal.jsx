@@ -1,5 +1,6 @@
 // TaskEditModal.jsx
 import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
 import TaskForm from "./TaskForm.jsx";
 
 const TaskEditModal = ({ isOpen, task, onClose, onSubmit }) => {
@@ -23,20 +24,31 @@ const TaskEditModal = ({ isOpen, task, onClose, onSubmit }) => {
           >
             <div
               className="
-                bg-glassLight border border-borderGlass
-                rounded-2xl shadow-bubble
-                px-5 py-4
+                bg-dark/90 backdrop-blur-xl border border-borderGlass
+                rounded-2xl shadow-[0_24px_70px_rgba(0,0,0,0.65)]
+                px-5 py-5
                 max-w-lg w-full
                 text-gray-100
               "
             >
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-semibold">Editar tarea</h2>
+              <div className="flex items-start justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-base font-semibold">Editar tarea</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Ajustá contenido, estado, prioridad o fecha.
+                  </p>
+                </div>
                 <button
                   onClick={onClose}
-                  className="text-slate-400 hover:text-slate-200 text-sm"
+                  className="
+                    shrink-0 w-8 h-8 rounded-full
+                    flex items-center justify-center
+                    text-slate-400 hover:text-slate-200 hover:bg-white/5
+                    transition active:scale-95
+                  "
+                  aria-label="Cerrar modal"
                 >
-                  Cerrar
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -44,7 +56,7 @@ const TaskEditModal = ({ isOpen, task, onClose, onSubmit }) => {
                 onSubmit={(data) => onSubmit(task._id, data)}
                 initialTask={task}
                 submitLabel="Guardar cambios"
-                showTitleInput={true}   // 👈 ahora sí mostramos el título
+                showTitleInput={true}
               />
             </div>
           </motion.div>
@@ -55,4 +67,3 @@ const TaskEditModal = ({ isOpen, task, onClose, onSubmit }) => {
 };
 
 export default TaskEditModal;
-

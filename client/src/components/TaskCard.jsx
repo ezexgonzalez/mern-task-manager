@@ -1,79 +1,18 @@
 import { useState, useRef, useEffect } from "react";
-import { MoreVertical, CheckCircle2, RotateCcw, Loader2 } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-
-const STATUS_DOT_COLOR = {
-  pending: "bg-warning",
-  "in-progress": "bg-progress",
-  completed: "bg-success",
-};
-
-const PRIORITY_LABEL = {
-  low: "Baja",
-  medium: "Media",
-  high: "Alta",
-};
-
-const PRIORITY_CLASS = {
-  low: "text-slate-400 border-slate-500/20 bg-slate-500/5",
-  medium: "text-amber-300/90 border-amber-400/20 bg-amber-400/5",
-  high: "text-red-300/90 border-red-400/20 bg-red-400/5",
-};
-
-const getDueDateInfo = (dueDate) => {
-  if (!dueDate) return null;
-
-  const today = new Date();
-
-  const dateOnly =
-    typeof dueDate === "string" ? dueDate.split("T")[0] : dueDate;
-
-  const [year, month, day] = dateOnly.split("-").map(Number);
-
-  const taskDate = new Date(year, month - 1, day);
-
-  today.setHours(0, 0, 0, 0);
-  taskDate.setHours(0, 0, 0, 0);
-
-  const diffTime = taskDate.getTime() - today.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-
-  if (diffDays < 0) {
-    return {
-      label: "Vencida",
-      className: "text-red-300 border-red-400/20 bg-red-400/5",
-    };
-  }
-
-  if (diffDays === 0) {
-    return {
-      label: "Vence hoy",
-      className: "text-amber-300 border-amber-400/20 bg-amber-400/5",
-    };
-  }
-
-  if (diffDays === 1) {
-    return {
-      label: "Vence mañana",
-      className: "text-yellow-300 border-yellow-400/20 bg-yellow-400/5",
-    };
-  }
-
-  return {
-    label: `Vence ${taskDate.toLocaleDateString("es-AR", {
-      day: "2-digit",
-      month: "2-digit",
-    })}`,
-    className: "text-slate-400 border-slate-500/20 bg-slate-500/5",
-  };
-};
+import {
+  getDueDateInfo,
+  getTaskPriorityOption,
+  getTaskStatusOption,
+} from "../constants/taskOptions.js";
+import TaskActionsMenu from "./task/TaskActionsMenu.jsx";
+import TaskMeta from "./task/TaskMeta.jsx";
+import TaskStatusIndicator from "./task/TaskStatusIndicator.jsx";
 
 const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
-  const dotClass = STATUS_DOT_COLOR[task.status] || "bg-warning";
-
-  const priority = task.priority || "medium";
-  const priorityLabel = PRIORITY_LABEL[priority] || "Media";
-  const priorityClass = PRIORITY_CLASS[priority] || PRIORITY_CLASS.medium;
+  const status = getTaskStatusOption(task.status);
+  const priority = getTaskPriorityOption(task.priority);
 
   const isCompleted = task.status === "completed";
   const isPending = task.isPending === true;
@@ -138,7 +77,7 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
           isPending
             ? "bg-glassLight border border-white/30 cursor-wait shadow-[0_0_15px_rgba(255,255,255,0.05)]"
             : isCompleted
-              ? "opacity-60 bg-glassLight border border-borderGlass"
+              ? "bg-white/[0.035] border border-white/10"
               : "bg-glassLight border border-borderGlass backdrop-blur-md hover:bg-glassMedium hover:border-glassMedium hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(0,0,0,0.55)]"
         }
 
@@ -160,60 +99,36 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
       )}
 
       <div className="flex items-start gap-3 flex-1 min-w-0 z-10 relative">
-        <div className="mt-1 shrink-0 w-3 h-3 flex items-center justify-center">
-          {isPending ? (
-            <Loader2 className="w-3 h-3 text-white/50 animate-spin" />
-          ) : (
-            <span
-              className={`block w-2.5 h-2.5 rounded-full transition-colors duration-300 ${dotClass}`}
-            />
-          )}
-        </div>
+        <TaskStatusIndicator isPending={isPending} dotClass={status.dotClass} />
 
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
+        <div className="flex flex-col min-w-0 flex-1">
+          <div className="min-w-0">
             <h3
               className={`
                 text-gray-100 font-semibold text-base leading-snug transition-colors truncate
-                ${isCompleted ? "line-through text-gray-200/80" : ""}
+                ${isCompleted ? "line-through text-slate-400" : ""}
               `}
             >
               {task.title}
             </h3>
-
-            <span
-              className={`
-                shrink-0 text-[10px]
-                px-2 py-0.5 rounded-full border
-                font-medium uppercase tracking-[0.08em]
-                ${priorityClass}
-              `}
-            >
-              {priorityLabel}
-            </span>
           </div>
-          {dueDateInfo && (
-            <span
-              className={`
-      mt-1 w-fit text-[10px]
-      px-2 py-0.5 rounded-full border
-      font-medium tracking-[0.04em]
-      ${dueDateInfo.className}
-    `}
-            >
-              {dueDateInfo.label}
-            </span>
-          )}
+
           {task.description?.trim() && (
             <p
               className={`
                 text-sm mt-1 break-words transition-colors
-                ${isCompleted ? "text-slate-500" : "text-slate-400"}
+                ${isCompleted ? "text-slate-600" : "text-slate-400"}
               `}
             >
               {task.description}
             </p>
           )}
+
+          <TaskMeta
+            priority={priority}
+            dueDateInfo={dueDateInfo}
+            isCompleted={isCompleted}
+          />
         </div>
       </div>
 
@@ -234,51 +149,12 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
 
       <AnimatePresence>
         {isMenuOpen && !isPending && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -5 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -5 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="
-              absolute right-3 top-10
-              bg-dark/90 backdrop-blur-xl border border-glassMedium
-              rounded-xl shadow-[0_20px_40px_-5px_rgba(0,0,0,0.7)]
-              py-1 text-sm min-w-[160px]
-              origin-top-right
-              z-50
-            "
-          >
-            <button
-              className="w-full text-left px-3 py-2 hover:bg-white/5 text-gray-100 flex items-center gap-2 transition-colors"
-              onClick={handleToggleComplete}
-            >
-              {isCompleted ? (
-                <>
-                  <RotateCcw className="w-4 h-4 text-slate-300" />
-                  Reabrir
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-slate-300" />
-                  Completar
-                </>
-              )}
-            </button>
-
-            <button
-              className="w-full text-left px-3 py-2 hover:bg-white/5 text-gray-100 transition-colors"
-              onClick={handleEdit}
-            >
-              Editar
-            </button>
-
-            <button
-              className="w-full text-left px-3 py-2 text-red-400 hover:bg-red-500/10 transition-colors"
-              onClick={handleDelete}
-            >
-              Eliminar
-            </button>
-          </motion.div>
+          <TaskActionsMenu
+            isCompleted={isCompleted}
+            onToggleComplete={handleToggleComplete}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         )}
       </AnimatePresence>
     </div>
