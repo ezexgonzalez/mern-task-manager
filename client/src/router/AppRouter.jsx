@@ -10,11 +10,11 @@ import Layout from "../components/layout/Layout.jsx";
 import NotFoundRedirect from "./NotFoundRedirect.jsx";
 
 function AppRouter() {
-  const userState = useAuthStore((state) => state);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
 
   useEffect(() => {
-    userState.checkAuth();
-  }, []);
+    checkAuth();
+  }, [checkAuth]);
 
   return (
     <BrowserRouter>
