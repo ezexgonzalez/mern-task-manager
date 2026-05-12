@@ -1,7 +1,8 @@
 import { useRef, useLayoutEffect } from "react";
 import { Search, X, Eye, EyeOff } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { FILTERS } from "../hooks/useTaskFilters"; // Importamos la constante que movimos antes
+import { FILTERS } from "../hooks/useTaskFilters";
+import { getTaskStatusOption } from "../constants/taskOptions.js";
 
 const TaskControls = ({
   statusFilter,
@@ -12,9 +13,6 @@ const TaskControls = ({
   setQuery,
   counts,
 }) => {
-  // -----------------------------------------------------------------------
-  // 🧠 LÓGICA DE SCROLL (Mantenemos el scroll estable al mostrar/ocultar chips)
-  // -----------------------------------------------------------------------
   const chipsScrollRef = useRef(null);
   const toggleBtnRef = useRef(null);
   const snapRef = useRef(null);
@@ -25,7 +23,6 @@ const TaskControls = ({
     const t = toggleBtnRef.current;
     const isScrollable = c && c.scrollWidth > c.clientWidth;
 
-    // Snapshot antes del cambio
     if (!showCompleted && isScrollable && c && t) {
       snapRef.current = {
         scrollLeft: c.scrollLeft,
@@ -33,7 +30,6 @@ const TaskControls = ({
       };
     }
 
-    // Evitar flicker si estaba en filtro completed
     if (showCompleted && statusFilter === "completed") {
       setStatusFilter("all");
     }
@@ -48,7 +44,6 @@ const TaskControls = ({
     const wasHidden = prevShowRef.current === false;
     const nowShown = showCompleted === true;
 
-    // Restaurar scroll
     if (wasHidden && nowShown && isScrollable && snapRef.current && c && t) {
       const { scrollLeft, toggleOffsetLeft } = snapRef.current;
       const newToggleOffsetLeft = t.offsetLeft;
@@ -59,22 +54,20 @@ const TaskControls = ({
     prevShowRef.current = showCompleted;
   }, [showCompleted]);
 
-  // -----------------------------------------------------------------------
-  // 🎨 RENDER
-  // -----------------------------------------------------------------------
   return (
     <section className="flex flex-col gap-3">
       <div className="w-full max-w-[900px] mx-auto flex flex-col gap-3">
-        {/* FILA DE CHIPS + TOGGLE */}
         <div
           ref={chipsScrollRef}
           className="flex items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <AnimatePresence initial={false}>
             {FILTERS.filter((f) =>
-              showCompleted ? true : f.key !== "completed"
+              showCompleted ? true : f.key !== "completed",
             ).map((f) => {
               const active = statusFilter === f.key;
+              const status = f.key === "all" ? null : getTaskStatusOption(f.key);
+
               return (
                 <motion.button
                   key={f.key}
@@ -88,19 +81,22 @@ const TaskControls = ({
                     relative overflow-hidden transform-gpu shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition backdrop-blur-md
                     ${
                       active
-                        ? "bg-white/10 border-white/15 text-white"
-                        : "bg-white/5 border-white/10 text-slate-300 hover:bg-white/8"
+                        ? "bg-white/[0.09] border-white/15 text-white"
+                        : "bg-white/[0.035] border-white/10 text-slate-300 hover:bg-white/[0.055]"
                     }
                   `}
                   aria-pressed={active}
                 >
                   <span className="flex items-center gap-2">
+                    {status && (
+                      <span
+                        className={`w-2 h-2 rounded-full ${status.dotClass}`}
+                      />
+                    )}
                     {f.label}
                     <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] ${
-                        active
-                          ? "bg-white/10 text-white/90"
-                          : "bg-white/5 text-slate-400"
+                      className={`pl-1 text-[11px] ${
+                        active ? "text-white/75" : "text-slate-500"
                       }`}
                     >
                       {counts[f.key]}
@@ -111,7 +107,6 @@ const TaskControls = ({
             })}
           </AnimatePresence>
 
-          {/* TOGGLE BUTTON */}
           <button
             ref={toggleBtnRef}
             type="button"
@@ -122,8 +117,8 @@ const TaskControls = ({
               sm:w-auto sm:h-auto sm:justify-start sm:rounded-full sm:px-3 sm:py-1.5 sm:text-xs sm:font-medium
               ${
                 showCompleted
-                  ? "bg-black/30 border-white/10 text-slate-300 hover:bg-black/35"
-                  : "bg-white/10 border-white/20 text-white"
+                  ? "bg-white/[0.035] border-white/10 text-slate-300 hover:bg-white/[0.055]"
+                  : "bg-white/[0.09] border-white/20 text-white"
               }
               active:scale-95
             `}
@@ -139,7 +134,7 @@ const TaskControls = ({
                 {showCompleted ? "Ocultar" : "Mostrar"} completadas
               </span>
               {!showCompleted && (
-                <span className="hidden sm:inline rounded-full px-2 py-0.5 text-[11px] bg-white/10 text-white/90">
+                <span className="hidden sm:inline text-[11px] text-white/75">
                   {counts.completed}
                 </span>
               )}
@@ -147,9 +142,8 @@ const TaskControls = ({
           </button>
         </div>
 
-        {/* BARRA DE BÚSQUEDA */}
         <div className="w-full">
-          <div className="w-full rounded-bubble border border-white/10 bg-black/20 backdrop-blur-xl px-4 py-2.5 flex items-center gap-3 shadow-bubble transition duration-200 focus-within:border-white/20 focus-within:bg-black/25 focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_0_10px_rgba(99,102,241,0.12)]">
+          <div className="w-full rounded-bubble border border-white/10 bg-white/[0.035] backdrop-blur-xl px-4 py-2.5 flex items-center gap-3 shadow-bubble transition duration-200 focus-within:border-white/20 focus-within:bg-white/[0.055] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_0_10px_rgba(99,102,241,0.12)]">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               value={query}

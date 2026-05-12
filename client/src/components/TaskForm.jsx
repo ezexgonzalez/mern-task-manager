@@ -3,8 +3,14 @@ import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { ChevronDown, Check } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { CalendarDays } from "lucide-react";
+import {
+  TASK_PRIORITY_OPTIONS,
+  TASK_STATUS_OPTIONS,
+  getTaskPriorityOption,
+  getTaskStatusOption,
+} from "../constants/taskOptions.js";
+import TaskSelect from "./task/TaskSelect.jsx";
 
 const schema = yup.object().shape({
   title: yup.string().required("El título es obligatorio"),
@@ -54,7 +60,7 @@ const TaskForm = ({
 
   const descriptionRef = useRef(null);
 
-  // sincroniza el título con el input del wrapper (modo crear)
+  // Sincroniza el título con el input del wrapper en modo crear.
   useEffect(() => {
     if (titleValue !== undefined) {
       setValue("title", titleValue);
@@ -80,42 +86,8 @@ const TaskForm = ({
     }
   };
 
-  const allStatusOptions = [
-    { value: "pending", label: "Pendiente", dotClass: "bg-warning" },
-    { value: "in-progress", label: "En progreso", dotClass: "bg-progress" },
-    { value: "completed", label: "Completada", dotClass: "bg-success" },
-  ];
-
-  const allPriorityOptions = [
-    {
-      value: "low",
-      label: "Baja",
-      dotClass: "bg-slate-400",
-    },
-    {
-      value: "medium",
-      label: "Media",
-      dotClass: "bg-yellow-400",
-    },
-    {
-      value: "high",
-      label: "Alta",
-      dotClass: "bg-red-400",
-    },
-  ];
-
-  const currentPriority =
-    allPriorityOptions.find((opt) => opt.value === priority) ||
-    allPriorityOptions[1];
-
-  const visiblePriorityOptions = allPriorityOptions.filter(
-    (opt) => opt.value !== priority,
-  );
-
-  const current =
-    allStatusOptions.find((opt) => opt.value === status) || allStatusOptions[0];
-
-  const visibleOptions = allStatusOptions.filter((opt) => opt.value !== status);
+  const currentStatus = getTaskStatusOption(status);
+  const currentPriority = getTaskPriorityOption(priority);
 
   const handleDescriptionInput = (e) => {
     const el = e.target;
@@ -137,7 +109,6 @@ const TaskForm = ({
       className="flex flex-col gap-4 w-full"
       onClick={(e) => e.stopPropagation()}
     >
-      {/* TÍTULO (solo en modo edición / cuando se pida) */}
       {showTitleInput && (
         <div className="flex flex-col gap-1">
           <input
@@ -159,7 +130,6 @@ const TaskForm = ({
         </div>
       )}
 
-      {/* DESCRIPCIÓN */}
       <textarea
         placeholder="Descripción opcional"
         {...descriptionReg}
@@ -180,185 +150,65 @@ const TaskForm = ({
         "
       />
 
-      {/* STATUS */}
-      <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => setStatusOpen((prev) => !prev)}
-          className="
-            w-full px-4 py-3
-            bg-glassLight backdrop-blur-md
-            rounded-bubble border border-borderGlass
-            text-gray-200
-            flex items-center justify-between gap-3
-            shadow-bubble
-            focus:outline-none focus:ring-2 focus:ring-glassMedium
-            transition
-          "
-        >
-          <div className="flex items-center gap-3">
-            <span className={`w-2.5 h-2.5 rounded-full ${current.dotClass}`} />
-            <span>{current.label}</span>
-          </div>
-
-          <ChevronDown
-            size={18}
-            className={`transition-transform ${
-              statusOpen ? "rotate-180" : "rotate-0"
-            }`}
-          />
-        </button>
-
-        <input type="hidden" {...register("status")} />
-
-        <AnimatePresence>
-          {statusOpen && (
-            <motion.div
-              layout
-              initial={{ height: 0, opacity: 0, y: -4 }}
-              animate={{ height: "auto", opacity: 1, y: 0 }}
-              exit={{ height: 0, opacity: 0, y: -4 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="
-                bg-glassLight backdrop-blur-md
-                rounded-bubble border border-borderGlass
-                shadow-bubble overflow-hidden
-              "
-            >
-              {visibleOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    setValue("status", opt.value, { shouldValidate: true });
-                    setStatusOpen(false);
-                  }}
-                  className="
-                    w-full px-4 py-3
-                    flex items-center justify-between gap-3
-                    text-gray-200 text-sm
-                    hover:bg-glassMedium/80
-                    transition
-                  "
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${opt.dotClass}`}
-                    />
-                    <span>{opt.label}</span>
-                  </div>
-
-                  {status === opt.value && (
-                    <Check size={16} className="text-success" />
-                  )}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      {/* PRIORITY */}
-      <div className="flex flex-col gap-2">
-        <button
-          type="button"
-          onClick={() => setPriorityOpen((prev) => !prev)}
-          className="
-      w-full px-4 py-3
-      bg-glassLight backdrop-blur-md
-      rounded-bubble border border-borderGlass
-      text-gray-200
-      flex items-center justify-between gap-3
-      shadow-bubble
-      focus:outline-none focus:ring-2 focus:ring-glassMedium
-      transition
-    "
-        >
-          <div className="flex items-center gap-3">
-            <span
-              className={`w-2.5 h-2.5 rounded-full ${currentPriority.dotClass}`}
-            />
-            <span>Prioridad {currentPriority.label}</span>
-          </div>
-
-          <ChevronDown
-            size={18}
-            className={`transition-transform ${
-              priorityOpen ? "rotate-180" : "rotate-0"
-            }`}
-          />
-        </button>
-
-        <input type="hidden" {...register("priority")} />
-
-        <AnimatePresence>
-          {priorityOpen && (
-            <motion.div
-              layout
-              initial={{ height: 0, opacity: 0, y: -4 }}
-              animate={{ height: "auto", opacity: 1, y: 0 }}
-              exit={{ height: 0, opacity: 0, y: -4 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="
-          bg-glassLight backdrop-blur-md
-          rounded-bubble border border-borderGlass
-          shadow-bubble overflow-hidden
-        "
-            >
-              {visiblePriorityOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => {
-                    setValue("priority", opt.value, { shouldValidate: true });
-                    setPriorityOpen(false);
-                  }}
-                  className="
-              w-full px-4 py-3
-              flex items-center justify-between gap-3
-              text-gray-200 text-sm
-              hover:bg-glassMedium/80
-              transition
-            "
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full ${opt.dotClass}`}
-                    />
-                    <span>{opt.label}</span>
-                  </div>
-
-                  {priority === opt.value && (
-                    <Check size={16} className="text-success" />
-                  )}
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-      <div className="flex flex-col gap-2">
-        <label className="text-sm text-slate-300">Fecha límite</label>
-
-        <input
-          type="date"
-          {...register("dueDate")}
-          className="
-      w-full px-4 py-3
-      bg-glassLight backdrop-blur-md
-      rounded-bubble border border-borderGlass
-      text-gray-200
-      shadow-bubble
-      focus:outline-none focus:ring-2 focus:ring-glassMedium
-      transition
-      [color-scheme:dark]
-    "
+      <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1.1fr] items-start gap-3">
+        <TaskSelect
+          value={status}
+          options={TASK_STATUS_OPTIONS}
+          currentOption={currentStatus}
+          open={statusOpen}
+          onToggle={() => {
+            setStatusOpen((prev) => !prev);
+            setPriorityOpen(false);
+          }}
+          onChange={(nextStatus) => {
+            setValue("status", nextStatus, { shouldValidate: true });
+            setStatusOpen(false);
+          }}
         />
 
-        {errors.dueDate && (
-          <p className="text-red-400 text-xs">{errors.dueDate.message}</p>
-        )}
+        <TaskSelect
+          value={priority}
+          options={TASK_PRIORITY_OPTIONS}
+          currentOption={currentPriority}
+          open={priorityOpen}
+          onToggle={() => {
+            setPriorityOpen((prev) => !prev);
+            setStatusOpen(false);
+          }}
+          onChange={(nextPriority) => {
+            setValue("priority", nextPriority, { shouldValidate: true });
+            setPriorityOpen(false);
+          }}
+          labelPrefix="Prioridad "
+        />
+
+        <div className="relative min-w-0 self-start">
+          <CalendarDays className="pointer-events-none absolute left-3 top-[1.35rem] w-4 h-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="date"
+            aria-label="Fecha límite"
+            {...register("dueDate")}
+            className="
+              w-full pl-9 pr-3 py-2.5
+              bg-white/[0.035] backdrop-blur-md
+              rounded-bubble border border-white/10
+              text-gray-200 text-sm
+              shadow-bubble
+              focus:outline-none focus:ring-2 focus:ring-glassMedium
+              transition hover:bg-white/[0.055]
+              [color-scheme:dark]
+            "
+          />
+          {errors.dueDate && (
+            <p className="mt-1 text-red-400 text-xs">
+              {errors.dueDate.message}
+            </p>
+          )}
+        </div>
       </div>
-      {/* COLOR oculto */}
+
+      <input type="hidden" {...register("status")} />
+      <input type="hidden" {...register("priority")} />
       <input type="color" {...register("color")} className="hidden" />
 
       {errors.status && (
@@ -367,6 +217,7 @@ const TaskForm = ({
       {errors.priority && (
         <p className="text-red-400 text-xs">{errors.priority.message}</p>
       )}
+
       <div className="flex justify-end mt-1">
         <button
           type="submit"

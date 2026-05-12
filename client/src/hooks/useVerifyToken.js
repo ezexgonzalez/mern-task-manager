@@ -4,15 +4,16 @@ import { useAuthStore } from "../store/useAuthStore";
 
 export const useVerifyToken = () => {
   const navigate = useNavigate();
-  const userState = useAuthStore((state) => state);
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
 
   useEffect(() => {
-    const verify = async () => {
-      await userState.checkAuth();
-      if (userState.isAuthenticated) {
-        navigate("/dashboard");
-      }
-    };
-    verify();
-  }, [userState.isAuthenticated, navigate]);
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 };
