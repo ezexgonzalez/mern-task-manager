@@ -77,8 +77,8 @@ const TaskCard = ({ task, onEdit, onDelete, onStatusChange }) => {
           isPending
             ? "bg-glassLight border border-white/30 cursor-wait shadow-[0_0_15px_rgba(255,255,255,0.05)]"
             : isCompleted
-              ? "bg-white/[0.035] border border-white/10"
-              : "bg-glassLight border border-borderGlass backdrop-blur-md hover:bg-glassMedium hover:border-glassMedium hover:-translate-y-[1px] hover:shadow-[0_12px_35px_rgba(0,0,0,0.55)]"
+              ? "bg-white/[0.03] border border-white/10"
+              : "bg-white/[0.05] border border-white/10 backdrop-blur-md hover:bg-white/[0.075] hover:border-white/15 hover:-translate-y-[1px] hover:shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
         }
 
         group

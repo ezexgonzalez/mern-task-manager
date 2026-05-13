@@ -37,8 +37,8 @@ const FilterMenu = ({ id, label, value, onChange, options, open, onToggle }) => 
         type="button"
         onClick={onToggle}
         className={`
-          group flex h-10 w-full min-w-0 items-center gap-2 rounded-bubble border px-3 text-left
-          text-xs shadow-bubble backdrop-blur-xl transition active:scale-[0.99]
+          group flex h-10 w-full min-w-0 items-center gap-2 rounded-[16px] border px-3 text-left
+          text-xs backdrop-blur-xl transition active:scale-[0.99]
           ${
             active
               ? "border-white/20 bg-white/[0.085] text-white"
@@ -67,7 +67,7 @@ const FilterMenu = ({ id, label, value, onChange, options, open, onToggle }) => 
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.14, ease: "easeOut" }}
             className="
-              absolute left-0 right-0 top-12 z-50 overflow-hidden rounded-bubble border border-borderGlass
+              absolute left-0 right-0 top-12 z-50 overflow-hidden rounded-[16px] border border-white/10
               bg-[rgba(22,24,29,0.96)] p-1.5 shadow-bubble backdrop-blur-2xl
               ring-1 ring-white/[0.035]
             "
@@ -133,6 +133,7 @@ const TaskControls = ({
   const snapRef = useRef(null);
   const prevShowRef = useRef(showCompleted);
   const [openMenu, setOpenMenu] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const handleToggleShowCompleted = () => {
     const c = chipsScrollRef.current;
@@ -186,95 +187,10 @@ const TaskControls = ({
   };
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="w-full max-w-[900px] mx-auto flex flex-col gap-3">
-        <div
-          ref={chipsScrollRef}
-          className="flex items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        >
-          <AnimatePresence initial={false}>
-            {FILTERS.filter((f) =>
-              showCompleted ? true : f.key !== "completed",
-            ).map((f) => {
-              const active = statusFilter === f.key;
-              const status = f.key === "all" ? null : getTaskStatusOption(f.key);
-
-              return (
-                <motion.button
-                  key={f.key}
-                  layout
-                  initial={{ opacity: 0, y: -4, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                  transition={{ duration: 0.16, ease: "easeOut" }}
-                  onClick={() => setStatusFilter(f.key)}
-                  className={`
-                    relative overflow-hidden transform-gpu shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition backdrop-blur-md
-                    ${
-                      active
-                        ? "bg-white/[0.09] border-white/15 text-white"
-                        : "bg-white/[0.035] border-white/10 text-slate-300 hover:bg-white/[0.055]"
-                    }
-                  `}
-                  aria-pressed={active}
-                >
-                  <span className="flex items-center gap-2">
-                    {status && (
-                      <span
-                        className={`w-2 h-2 rounded-full ${status.dotClass}`}
-                      />
-                    )}
-                    {f.label}
-                    <span
-                      className={`pl-1 text-[11px] ${
-                        active ? "text-white/75" : "text-slate-500"
-                      }`}
-                    >
-                      {counts[f.key]}
-                    </span>
-                  </span>
-                </motion.button>
-              );
-            })}
-          </AnimatePresence>
-
-          <button
-            ref={toggleBtnRef}
-            type="button"
-            onClick={handleToggleShowCompleted}
-            className={`
-              relative overflow-hidden transform-gpu shrink-0 border transition backdrop-blur-md flex items-center
-              w-10 h-9 justify-center rounded-full px-0
-              sm:w-auto sm:h-auto sm:justify-start sm:rounded-full sm:px-3 sm:py-1.5 sm:text-xs sm:font-medium
-              ${
-                showCompleted
-                  ? "bg-white/[0.035] border-white/10 text-slate-300 hover:bg-white/[0.055]"
-                  : "bg-white/[0.09] border-white/20 text-white"
-              }
-              active:scale-95
-            `}
-            title={showCompleted ? "Ocultar completadas" : "Mostrar completadas"}
-          >
-            <span className="flex items-center gap-2">
-              {showCompleted ? (
-                <EyeOff className="w-4 h-4 text-slate-300" />
-              ) : (
-                <Eye className="w-4 h-4 text-slate-200" />
-              )}
-              <span className="hidden sm:inline leading-none">
-                {showCompleted ? "Ocultar" : "Mostrar"} completadas
-              </span>
-              {!showCompleted && (
-                <span className="hidden sm:inline text-[11px] text-white/75">
-                  {counts.completed}
-                </span>
-              )}
-            </span>
-          </button>
-        </div>
-
+    <section className="rounded-bubble border border-white/10 bg-white/[0.025] p-3 shadow-bubble backdrop-blur-xl sm:p-4">
+      <div className="flex flex-col gap-3 md:gap-4">
         <div className="w-full">
-          <div className="w-full rounded-bubble border border-white/10 bg-white/[0.035] backdrop-blur-xl px-4 py-2.5 flex items-center gap-3 shadow-bubble transition duration-200 focus-within:border-white/20 focus-within:bg-white/[0.055] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.12),0_0_10px_rgba(99,102,241,0.12)]">
+          <div className="w-full rounded-[16px] border border-white/10 bg-white/[0.03] backdrop-blur-xl px-4 py-2.5 flex items-center gap-3 transition duration-200 focus-within:border-white/20 focus-within:bg-white/[0.045] focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.08)]">
             <Search className="w-4 h-4 text-slate-400 shrink-0" />
             <input
               value={query}
@@ -297,54 +213,180 @@ const TaskControls = ({
         </div>
 
         <div
-          ref={advancedRef}
-          className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]"
+          ref={chipsScrollRef}
+          className="flex items-center gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <FilterMenu
-            id="priority"
-            label="Prioridad"
-            value={priorityFilter}
-            onChange={setPriorityFilter}
-            options={PRIORITY_FILTERS}
-            open={openMenu === "priority"}
-            onToggle={() => toggleMenu("priority")}
-          />
-          <FilterMenu
-            id="due"
-            label="Fecha"
-            value={dueFilter}
-            onChange={setDueFilter}
-            options={DUE_FILTERS}
-            open={openMenu === "due"}
-            onToggle={() => toggleMenu("due")}
-          />
-          <FilterMenu
-            id="sort"
-            label="Orden"
-            value={sortMode}
-            onChange={setSortMode}
-            options={SORT_OPTIONS}
-            open={openMenu === "sort"}
-            onToggle={() => toggleMenu("sort")}
-          />
+          <AnimatePresence initial={false}>
+            {FILTERS.filter((f) =>
+              showCompleted ? true : f.key !== "completed",
+            ).map((f) => {
+              const active = statusFilter === f.key;
+              const status = f.key === "all" ? null : getTaskStatusOption(f.key);
+
+              return (
+                <motion.button
+                  key={f.key}
+                  layout
+                  initial={{ opacity: 0, y: -4, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                  transition={{ duration: 0.16, ease: "easeOut" }}
+                  onClick={() => setStatusFilter(f.key)}
+                  className={`
+                    relative overflow-hidden transform-gpu shrink-0 rounded-full border
+                    h-8 px-2.5 text-[11px] font-medium transition backdrop-blur-md
+                    sm:h-auto sm:px-3 sm:py-1.5 sm:text-xs
+                    ${
+                      active
+                        ? "bg-white/[0.09] border-white/15 text-white"
+                        : "bg-white/[0.035] border-white/10 text-slate-300 hover:bg-white/[0.055]"
+                    }
+                  `}
+                  aria-pressed={active}
+                >
+                  <span className="flex h-full items-center gap-1.5 sm:gap-2">
+                    {status && (
+                      <span
+                        className={`h-1.5 w-1.5 rounded-full sm:h-2 sm:w-2 ${status.dotClass}`}
+                      />
+                    )}
+                    {f.label}
+                    <span
+                      className={`pl-0.5 text-[10px] sm:pl-1 sm:text-[11px] ${
+                        active ? "text-white/75" : "text-slate-500"
+                      }`}
+                    >
+                      {counts[f.key]}
+                    </span>
+                  </span>
+                </motion.button>
+              );
+            })}
+          </AnimatePresence>
+
           <button
+            ref={toggleBtnRef}
             type="button"
-            onClick={() => {
-              resetFilters();
-              setOpenMenu(null);
-            }}
-            disabled={!hasActiveFilters}
-            className="
-              inline-flex h-10 items-center justify-center gap-2 rounded-bubble border border-white/10
-              bg-white/[0.035] px-3 text-xs font-medium text-slate-300 shadow-bubble
-              backdrop-blur-xl transition hover:border-white/15 hover:bg-white/[0.055] hover:text-slate-100
-              disabled:cursor-not-allowed disabled:opacity-40
-            "
-            title="Limpiar filtros"
+            onClick={handleToggleShowCompleted}
+            className={`
+              relative overflow-hidden transform-gpu shrink-0 border transition backdrop-blur-md flex items-center
+              h-8 w-8 justify-center rounded-full px-0
+              sm:w-auto sm:h-auto sm:justify-start sm:rounded-full sm:px-3 sm:py-1.5 sm:text-xs sm:font-medium
+              ${
+                showCompleted
+                  ? "bg-white/[0.035] border-white/10 text-slate-300 hover:bg-white/[0.055]"
+                  : "bg-white/[0.09] border-white/20 text-white"
+              }
+              active:scale-95
+            `}
+            title={showCompleted ? "Ocultar completadas" : "Mostrar completadas"}
           >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span>Limpiar</span>
+            <span className="flex h-full items-center justify-center gap-2">
+              {showCompleted ? (
+                <EyeOff className="h-3.5 w-3.5 text-slate-300 sm:h-4 sm:w-4" />
+              ) : (
+                <Eye className="h-3.5 w-3.5 text-slate-200 sm:h-4 sm:w-4" />
+              )}
+              <span className="hidden sm:inline leading-none">
+                {showCompleted ? "Ocultar" : "Mostrar"} completadas
+              </span>
+              {!showCompleted && (
+                <span className="hidden sm:inline text-[11px] text-white/75">
+                  {counts.completed}
+                </span>
+              )}
+            </span>
           </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setFiltersOpen((open) => !open);
+            setOpenMenu(null);
+          }}
+          className={`
+            flex h-9 w-full items-center justify-between gap-3 rounded-[16px] border px-3
+            text-left text-xs font-medium leading-none transition md:hidden
+            ${
+              hasActiveFilters
+                ? "border-white/20 bg-white/[0.07] text-white"
+                : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.055]"
+            }
+          `}
+          aria-expanded={filtersOpen}
+        >
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <SlidersHorizontal className="h-3.5 w-3.5 shrink-0 self-center text-slate-400" />
+            <span className="truncate leading-none">Filtros y orden</span>
+            {hasActiveFilters && (
+              <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-success/20 bg-success/10 px-2 text-[10px] font-semibold leading-none text-success">
+                Activos
+              </span>
+            )}
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 shrink-0 self-center text-slate-500 transition ${
+              filtersOpen ? "rotate-180 text-slate-200" : ""
+            }`}
+          />
+        </button>
+
+        <div className={`${filtersOpen ? "block" : "hidden"} md:block`}>
+          <div
+            ref={advancedRef}
+            className={`grid grid-cols-1 gap-2 ${
+              hasActiveFilters
+                ? "md:grid-cols-[1fr_1fr_1fr_auto]"
+                : "md:grid-cols-3"
+            }`}
+          >
+            <FilterMenu
+              id="priority"
+              label="Prioridad"
+              value={priorityFilter}
+              onChange={setPriorityFilter}
+              options={PRIORITY_FILTERS}
+              open={openMenu === "priority"}
+              onToggle={() => toggleMenu("priority")}
+            />
+            <FilterMenu
+              id="due"
+              label="Fecha"
+              value={dueFilter}
+              onChange={setDueFilter}
+              options={DUE_FILTERS}
+              open={openMenu === "due"}
+              onToggle={() => toggleMenu("due")}
+            />
+            <FilterMenu
+              id="sort"
+              label="Orden"
+              value={sortMode}
+              onChange={setSortMode}
+              options={SORT_OPTIONS}
+              open={openMenu === "sort"}
+              onToggle={() => toggleMenu("sort")}
+            />
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  resetFilters();
+                  setOpenMenu(null);
+                }}
+                className="
+                  inline-flex h-10 items-center justify-center gap-2 rounded-[16px] border border-white/10
+                  bg-white/[0.03] px-3 text-xs font-medium text-slate-300
+                  backdrop-blur-xl transition hover:border-white/15 hover:bg-white/[0.055] hover:text-slate-100
+                "
+                title="Limpiar filtros"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>Limpiar</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </section>
