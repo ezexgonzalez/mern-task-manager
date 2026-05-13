@@ -27,9 +27,9 @@ const TaskFormWrapper = ({ onSubmit }) => {
     <motion.div
       ref={drawerRef}
       className="
-        w-full  mt-4
-        bg-glassLight backdrop-blur-md
-        rounded-bubble border border-borderGlass shadow-bubble
+        w-full
+        bg-white/[0.045] backdrop-blur-md
+        rounded-bubble border border-white/10 shadow-bubble
         px-5 py-4
       "
     >
