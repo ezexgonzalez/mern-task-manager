@@ -101,32 +101,25 @@ const Dashboard = () => {
     <>
       <NavBar />
 
-      <main className="pt-10 pb-10 flex flex-col gap-6">
+      <main className="pt-8 pb-10 flex flex-col gap-6 sm:pt-10 sm:pb-12 sm:gap-8">
         {/* Header */}
-        <section className="flex flex-col gap-1 w-full max-w-[900px] mx-auto px-4 sm:px-0">
-          <h1 className="text-xl font-semibold text-white">
-            Hola, {firstName} 👋
-          </h1>
-          <p className="text-sm text-slate-400">
-            Esto es lo que tenés para hoy.
-          </p>
-        </section>
+        <section className="flex flex-col gap-4 w-full max-w-[900px] mx-auto px-4 sm:gap-5 sm:px-0">
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-semibold text-white">
+              Hola, {firstName} 👋
+            </h1>
+            <p className="text-sm text-slate-400">
+              Esto es lo que tenés para hoy.
+            </p>
+          </div>
 
-        {/* Formulario */}
-        <section className="w-full max-w-[900px] mx-auto px-4 sm:px-0">
           <TaskFormWrapper onSubmit={createTask} />
         </section>
 
-        {/* Estadísticas */}
+        {/* Resumen y controles */}
         {!isFetching && !error && tasks.length > 0 && (
-          <div className="w-full max-w-[900px] mx-auto px-4 sm:px-0">
+          <section className="w-full max-w-[900px] mx-auto px-4 sm:px-0 flex flex-col gap-3 sm:gap-4">
             <TaskStats stats={stats} />
-          </div>
-        )}
-
-        {/* Controles de Filtro */}
-        {!isFetching && !error && tasks.length > 0 && (
-          <div className="w-full max-w-[900px] mx-auto px-4 sm:px-0">
             <TaskControls
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
@@ -144,7 +137,7 @@ const Dashboard = () => {
               hasActiveFilters={hasActiveFilters}
               resetFilters={resetFilters}
             />
-          </div>
+          </section>
         )}
 
         {/* Lista de Tareas */}
