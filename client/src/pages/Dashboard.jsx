@@ -15,6 +15,8 @@ import { useTaskFilters } from "../hooks/useTaskFilters.js";
 import { useToast } from "../hooks/useToast.js"; // ✅ Nuevo
 import { useUndoDelete } from "../hooks/useUndoDelete.js"; // ✅ Nuevo
 
+import { getErrorMessage } from "../utils/getErrorMessage.js";
+
 const Dashboard = () => {
   // 1. Datos del usuario y tareas
   const user = useAuthStore((state) => state.user);
@@ -62,9 +64,14 @@ const Dashboard = () => {
   const handleCloseEditModal = () => setTaskToEdit(null);
 
   const handleUpdateTask = async (id, data) => {
-    await updateTask(id, data);
-    setTaskToEdit(null);
-    showToast("Tarea actualizada");
+    try {
+      await updateTask(id, data);
+      setTaskToEdit(null);
+      showToast("Tarea actualizada");
+    } catch (err) {
+      showToast(getErrorMessage(err, "Error al actualizar la tarea"));
+      throw err;
+    }
   };
 
   const handleStatusChange = async (id, nextStatus) => {
@@ -73,8 +80,8 @@ const Dashboard = () => {
       showToast(
         nextStatus === "completed" ? "Tarea completada ✅" : "Tarea reabierta",
       );
-    } catch {
-      showToast("Error al actualizar la tarea");
+    } catch (err) {
+      showToast(getErrorMessage(err, "Error al actualizar la tarea"));
     }
   };
 
@@ -117,9 +124,7 @@ const Dashboard = () => {
 
         {/* Lista de Tareas */}
         <section className="flex flex-col gap-4 w-full max-w-[900px] mx-auto px-4 sm:px-0">
-          {error && (
-            <p className="text-red-400 text-sm">Error: {error.message}</p>
-          )}
+          {error && <p className="text-red-400 text-sm">Error: {error}</p>}
           {isFetching && !error && <TaskListSkeleton />}
 
           {!isFetching && !error && (

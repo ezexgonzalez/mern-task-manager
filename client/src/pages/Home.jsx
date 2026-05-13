@@ -1,9 +1,6 @@
-import { useVerifyToken } from "../hooks/useVerifyToken.js";
 import { Link } from "react-router-dom";
 
 const Home = () => {
-  useVerifyToken();
-
   return (
     <div
       className="

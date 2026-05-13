@@ -20,6 +20,21 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const token = localStorage.getItem("token");
+    const status = error.response?.status;
+
+    if (status === 401 && token) {
+      localStorage.removeItem("token");
+      window.dispatchEvent(new Event("auth:unauthorized"));
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 
 
 export default api;

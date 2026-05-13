@@ -1,9 +1,14 @@
 import { Navigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore.js";
+import Loader from "../components/Loader.jsx";
 
 const NotFoundRedirect = () => {
   // Ajustá esta línea a cómo guardás el auth:
   const userState = useAuthStore((state) => state);
+
+  if (userState.loading) {
+    return <Loader />;
+  }
 
   if (userState.isAuthenticated) {
     // Usuario logueado → lo mandamos al dashboard
