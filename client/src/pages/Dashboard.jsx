@@ -8,6 +8,7 @@ import TaskListSkeleton from "../components/TaskListSkeleton.jsx";
 import Toast from "../components/Toast.jsx";
 import TaskEditModal from "../components/TaskEditModal.jsx";
 import TaskControls from "../components/TaskControls.jsx";
+import TaskStats from "../components/TaskStats.jsx";
 
 import { useAuthStore } from "../store/useAuthStore.js";
 import { useTasks } from "../hooks/useTasks.js";
@@ -50,6 +51,7 @@ const Dashboard = () => {
     debouncedQuery,
     visibleTasks,
     counts,
+    stats,
     hasActiveFilters,
     resetFilters,
   } = useTaskFilters(tasks);
@@ -114,6 +116,13 @@ const Dashboard = () => {
         <section className="w-full max-w-[900px] mx-auto px-4 sm:px-0">
           <TaskFormWrapper onSubmit={createTask} />
         </section>
+
+        {/* Estadísticas */}
+        {!isFetching && !error && tasks.length > 0 && (
+          <div className="w-full max-w-[900px] mx-auto px-4 sm:px-0">
+            <TaskStats stats={stats} />
+          </div>
+        )}
 
         {/* Controles de Filtro */}
         {!isFetching && !error && tasks.length > 0 && (
