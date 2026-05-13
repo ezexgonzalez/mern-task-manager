@@ -5,6 +5,7 @@ import {
   updateTask as updateTaskService,
   deleteTask as deleteTaskService,
 } from "../services/taskService.js";
+import { getErrorMessage } from "../utils/getErrorMessage.js";
 
 export const useTasks = () => {
   const [tasks, setTasks] = useState([]);
@@ -24,7 +25,7 @@ export const useTasks = () => {
       const data = await getTasksService();
       setTasks(data.tasks || []);
     } catch (err) {
-      setError(err);
+      setError(getErrorMessage(err, "Error al obtener tareas"));
     } finally {
       setIsFetching(false);
     }
@@ -66,7 +67,7 @@ export const useTasks = () => {
       );
     } catch (err) {
       setTasks((prev) => prev.filter((t) => t._id !== tempId));
-      throw err;
+      throw getErrorMessage(err, "Error al crear la tarea");
     } finally {
       setIsMutating(false);
     }
@@ -87,9 +88,10 @@ export const useTasks = () => {
     try {
       await updateTaskService(idToSendToBackend, updates);
     } catch (err) {
+      const message = getErrorMessage(err, "Error al actualizar la tarea");
       setTasks(previousTasks);
-      setError(err);
-      throw err;
+      setError(message);
+      throw message;
     }
   };
 
@@ -116,10 +118,11 @@ export const useTasks = () => {
     try {
       await deleteTaskService(id);
     } catch (err) {
-      setError(err);
+      const message = getErrorMessage(err, "Error al eliminar la tarea");
+      setError(message);
       // Si falla el borrado real, quizás deberíamos recargar la lista
       fetchTasks();
-      throw err;
+      throw message;
     }
   };
 

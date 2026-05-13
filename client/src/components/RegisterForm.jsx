@@ -14,13 +14,13 @@ const schema = yup.object().shape({
     .min(2, "Debe tener al menos 2 caracteres"),
   email: yup
     .string()
-    .email("El email no es valido")
+    .email("El email no es válido")
     .required("El email es obligatorio"),
   password: yup
     .string()
     .required("La contraseña es obligatoria")
     .min(6, "Debe tener al menos 6 caracteres")
-    .matches(/\d/, "Debe contener al menos un numero"),
+    .matches(/\d/, "Debe contener al menos un número"),
   confirmPassword: yup
     .string()
     .oneOf([yup.ref("password")], "Las contraseñas no coinciden")
