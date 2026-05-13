@@ -7,22 +7,93 @@ export const FILTERS = [
   { key: "completed", label: "Completadas" },
 ];
 
+export const PRIORITY_FILTERS = [
+  { key: "all", label: "Todas" },
+  { key: "high", label: "Alta" },
+  { key: "medium", label: "Media" },
+  { key: "low", label: "Baja" },
+];
+
+export const DUE_FILTERS = [
+  { key: "all", label: "Todas" },
+  { key: "overdue", label: "Vencidas" },
+  { key: "today", label: "Hoy" },
+  { key: "upcoming", label: "Próximas" },
+  { key: "none", label: "Sin fecha" },
+];
+
+export const SORT_OPTIONS = [
+  { key: "smart", label: "Relevancia" },
+  { key: "recent", label: "Recientes" },
+  { key: "dueDate", label: "Fecha límite" },
+  { key: "priority", label: "Prioridad" },
+];
+
 const VALID_FILTERS = FILTERS.map((f) => f.key);
+const VALID_PRIORITY_FILTERS = PRIORITY_FILTERS.map((f) => f.key);
+const VALID_DUE_FILTERS = DUE_FILTERS.map((f) => f.key);
+const VALID_SORT_OPTIONS = SORT_OPTIONS.map((o) => o.key);
+
+const getSavedValue = (key, validValues, fallback) => {
+  const saved = localStorage.getItem(key);
+  return validValues.includes(saved) ? saved : fallback;
+};
+
+const getTime = (task) => {
+  const value = task.updatedAt || task.createdAt;
+  const ms = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(ms) ? ms : 0;
+};
+
+const getDueDateTime = (task) => {
+  if (!task.dueDate) return Number.POSITIVE_INFINITY;
+
+  const dateOnly =
+    typeof task.dueDate === "string" ? task.dueDate.split("T")[0] : task.dueDate;
+  const [year, month, day] = dateOnly.split("-").map(Number);
+  const ms = new Date(year, month - 1, day).getTime();
+
+  return Number.isFinite(ms) ? ms : Number.POSITIVE_INFINITY;
+};
+
+const getDueBucket = (task) => {
+  if (!task.dueDate) return "none";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const taskDate = new Date(getDueDateTime(task));
+  taskDate.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.round(
+    (taskDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+  );
+
+  if (diffDays < 0) return "overdue";
+  if (diffDays === 0) return "today";
+  return "upcoming";
+};
 
 export const useTaskFilters = (tasks) => {
-  // 1. Estado de Filtros (con persistencia)
-  const [statusFilter, setStatusFilter] = useState(() => {
-    const saved = localStorage.getItem("tm_statusFilter");
-    const isValid = VALID_FILTERS.includes(saved);
-    return isValid ? saved : "all";
-  });
-
+  const [statusFilter, setStatusFilter] = useState(() =>
+    getSavedValue("tm_statusFilter", VALID_FILTERS, "all"),
+  );
   const [showCompleted, setShowCompleted] = useState(() => {
     const saved = localStorage.getItem("tm_showCompleted");
     return saved === null ? true : saved === "true";
   });
+  const [priorityFilter, setPriorityFilter] = useState(() =>
+    getSavedValue("tm_priorityFilter", VALID_PRIORITY_FILTERS, "all"),
+  );
+  const [dueFilter, setDueFilter] = useState(() =>
+    getSavedValue("tm_dueFilter", VALID_DUE_FILTERS, "all"),
+  );
+  const [sortMode, setSortMode] = useState(() =>
+    getSavedValue("tm_sortMode", VALID_SORT_OPTIONS, "smart"),
+  );
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
 
-  // 2. Persistencia
   useEffect(() => {
     localStorage.setItem("tm_statusFilter", statusFilter);
   }, [statusFilter]);
@@ -31,83 +102,141 @@ export const useTaskFilters = (tasks) => {
     localStorage.setItem("tm_showCompleted", String(showCompleted));
   }, [showCompleted]);
 
-  // 3. Búsqueda y Debounce
-  const [query, setQuery] = useState("");
-  const [debouncedQuery, setDebouncedQuery] = useState("");
+  useEffect(() => {
+    localStorage.setItem("tm_priorityFilter", priorityFilter);
+  }, [priorityFilter]);
+
+  useEffect(() => {
+    localStorage.setItem("tm_dueFilter", dueFilter);
+  }, [dueFilter]);
+
+  useEffect(() => {
+    localStorage.setItem("tm_sortMode", sortMode);
+  }, [sortMode]);
 
   useEffect(() => {
     const id = setTimeout(() => setDebouncedQuery(query), 250);
     return () => clearTimeout(id);
   }, [query]);
 
-  // 4. Lógica de Ordenamiento
-  const sortedTasks = useMemo(() => {
-    const rank = { "in-progress": 0, pending: 1, completed: 2 };
-
-    const getTime = (t) => {
-      const v = t.updatedAt || t.createdAt;
-      const ms = v ? new Date(v).getTime() : 0;
-      return Number.isFinite(ms) ? ms : 0;
-    };
-
-    return [...tasks].sort((a, b) => {
-      const ra = rank[a.status] ?? 99;
-      const rb = rank[b.status] ?? 99;
-      if (ra !== rb) return ra - rb;
-      return getTime(b) - getTime(a);
-    });
-  }, [tasks]);
-
-  // 5. Contadores
-  const counts = useMemo(() => {
-    const c = { all: tasks.length, pending: 0, "in-progress": 0, completed: 0 };
-    for (const t of tasks) {
-      if (c[t.status] !== undefined) c[t.status] += 1;
-    }
-    return c;
-  }, [tasks]);
-
-  // 6. Filtrado Final (Visible Tasks)
-  const visibleTasks = useMemo(() => {
-    // A) Filtro por estado
-    const byStatus =
-      statusFilter === "all"
-        ? sortedTasks
-        : sortedTasks.filter((t) => t.status === statusFilter);
-
-    // B) Ocultar completadas
-    const byCompleted =
-      showCompleted || statusFilter === "completed"
-        ? byStatus
-        : byStatus.filter((t) => t.status !== "completed");
-
-    // C) Búsqueda
-    const q = debouncedQuery.trim().toLowerCase();
-    if (!q) return byCompleted;
-
-    return byCompleted.filter((t) => {
-      const title = (t.title || "").toLowerCase();
-      const desc = (t.description || "").toLowerCase();
-      return title.includes(q) || desc.includes(q);
-    });
-  }, [sortedTasks, statusFilter, showCompleted, debouncedQuery]);
-
-  // 7. Reset automático si ocultamos completadas estando en tab completadas
   useEffect(() => {
     if (!showCompleted && statusFilter === "completed") {
       setStatusFilter("all");
     }
   }, [showCompleted, statusFilter]);
 
+  const sortedTasks = useMemo(() => {
+    const statusRank = { "in-progress": 0, pending: 1, completed: 2 };
+    const priorityRank = { high: 0, medium: 1, low: 2 };
+
+    return [...tasks].sort((a, b) => {
+      if (sortMode === "recent") {
+        return getTime(b) - getTime(a);
+      }
+
+      if (sortMode === "dueDate") {
+        const dueDiff = getDueDateTime(a) - getDueDateTime(b);
+        if (dueDiff !== 0) return dueDiff;
+        return getTime(b) - getTime(a);
+      }
+
+      if (sortMode === "priority") {
+        const pa = priorityRank[a.priority] ?? 99;
+        const pb = priorityRank[b.priority] ?? 99;
+        if (pa !== pb) return pa - pb;
+        return getTime(b) - getTime(a);
+      }
+
+      const ra = statusRank[a.status] ?? 99;
+      const rb = statusRank[b.status] ?? 99;
+      if (ra !== rb) return ra - rb;
+
+      return getTime(b) - getTime(a);
+    });
+  }, [tasks, sortMode]);
+
+  const counts = useMemo(() => {
+    const c = { all: tasks.length, pending: 0, "in-progress": 0, completed: 0 };
+
+    for (const task of tasks) {
+      if (c[task.status] !== undefined) c[task.status] += 1;
+    }
+
+    return c;
+  }, [tasks]);
+
+  const visibleTasks = useMemo(() => {
+    const byStatus =
+      statusFilter === "all"
+        ? sortedTasks
+        : sortedTasks.filter((task) => task.status === statusFilter);
+
+    const byCompleted =
+      showCompleted || statusFilter === "completed"
+        ? byStatus
+        : byStatus.filter((task) => task.status !== "completed");
+
+    const byPriority =
+      priorityFilter === "all"
+        ? byCompleted
+        : byCompleted.filter((task) => task.priority === priorityFilter);
+
+    const byDueDate =
+      dueFilter === "all"
+        ? byPriority
+        : byPriority.filter((task) => getDueBucket(task) === dueFilter);
+
+    const q = debouncedQuery.trim().toLowerCase();
+    if (!q) return byDueDate;
+
+    return byDueDate.filter((task) => {
+      const title = (task.title || "").toLowerCase();
+      const description = (task.description || "").toLowerCase();
+      return title.includes(q) || description.includes(q);
+    });
+  }, [
+    sortedTasks,
+    statusFilter,
+    showCompleted,
+    priorityFilter,
+    dueFilter,
+    debouncedQuery,
+  ]);
+
+  const hasActiveFilters =
+    statusFilter !== "all" ||
+    priorityFilter !== "all" ||
+    dueFilter !== "all" ||
+    sortMode !== "smart" ||
+    query.trim().length > 0 ||
+    !showCompleted;
+
+  const resetFilters = () => {
+    setStatusFilter("all");
+    setPriorityFilter("all");
+    setDueFilter("all");
+    setSortMode("smart");
+    setQuery("");
+    setShowCompleted(true);
+  };
+
   return {
     statusFilter,
     setStatusFilter,
     showCompleted,
     setShowCompleted,
+    priorityFilter,
+    setPriorityFilter,
+    dueFilter,
+    setDueFilter,
+    sortMode,
+    setSortMode,
     query,
     setQuery,
     debouncedQuery,
     visibleTasks,
     counts,
+    hasActiveFilters,
+    resetFilters,
   };
 };

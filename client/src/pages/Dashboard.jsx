@@ -39,11 +39,19 @@ const Dashboard = () => {
     setStatusFilter,
     showCompleted,
     setShowCompleted,
+    priorityFilter,
+    setPriorityFilter,
+    dueFilter,
+    setDueFilter,
+    sortMode,
+    setSortMode,
     query,
     setQuery,
     debouncedQuery,
     visibleTasks,
     counts,
+    hasActiveFilters,
+    resetFilters,
   } = useTaskFilters(tasks);
 
   const { toast, showToast, hideToast } = useToast();
@@ -115,9 +123,17 @@ const Dashboard = () => {
               setStatusFilter={setStatusFilter}
               showCompleted={showCompleted}
               setShowCompleted={setShowCompleted}
+              priorityFilter={priorityFilter}
+              setPriorityFilter={setPriorityFilter}
+              dueFilter={dueFilter}
+              setDueFilter={setDueFilter}
+              sortMode={sortMode}
+              setSortMode={setSortMode}
               query={query}
               setQuery={setQuery}
               counts={counts}
+              hasActiveFilters={hasActiveFilters}
+              resetFilters={resetFilters}
             />
           </div>
         )}
