@@ -5,7 +5,7 @@ export const useAuthStore = create((set) => ({
   user: null,
   isAuthenticated: false,
   loading: true,
-  //Verificamos si el token es valido
+  // Verificamos si el token es válido
   checkAuth: async () => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -20,7 +20,7 @@ export const useAuthStore = create((set) => ({
         loading: false,
       });
     } catch (error) {
-      console.error("Token invalido o expirado", error);
+      console.error("Token inválido o expirado", error);
       localStorage.removeItem("token");
       set({
         isAuthenticated: false,
@@ -29,14 +29,14 @@ export const useAuthStore = create((set) => ({
       });
     }
   },
-  //Guardamos token y datos del usuario
-  login : (token, userData) =>{
+  // Guardamos token y datos del usuario
+  login: (token, userData) => {
     localStorage.setItem("token", token);
-    set({user:userData, isAuthenticated: true});
+    set({ user: userData, isAuthenticated: true, loading: false });
   },
-  //Cerrar sesion
-  logout: () =>{
+  // Cerrar sesión
+  logout: () => {
     localStorage.removeItem("token");
-    set({user: null, isAuthenticated: false});
-  }
+    set({ user: null, isAuthenticated: false, loading: false });
+  },
 }));

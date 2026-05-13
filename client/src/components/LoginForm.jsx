@@ -3,7 +3,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { loginUser } from "../services/authService.js";
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore.js";
 import { Mail, Lock } from "lucide-react";
 
@@ -22,7 +22,11 @@ const LoginForm = () => {
   const [successMessage, setSuccessMessage] = useState("");
 
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useAuthStore((state) => state.login);
+  const sessionExpiredMessage = location.state?.sessionExpired
+    ? "Tu sesión expiró. Iniciá sesión nuevamente."
+    : "";
 
   // Manejo de formulario
   const {
@@ -182,8 +186,10 @@ const LoginForm = () => {
         </div>
 
         {/* Mensajes de error / éxito */}
-        {serverError && (
-          <p className="text-red-400 text-xs text-center">{serverError}</p>
+        {(serverError || sessionExpiredMessage) && (
+          <p className="text-red-400 text-xs text-center">
+            {serverError || sessionExpiredMessage}
+          </p>
         )}
         {successMessage && (
           <p className="text-green-400 text-xs text-center">

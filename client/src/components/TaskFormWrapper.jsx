@@ -68,8 +68,8 @@ const TaskFormWrapper = ({ onSubmit }) => {
 
             <TaskForm
               titleValue={title}
-              onSubmit={(data) => {
-                onSubmit(data);
+              onSubmit={async (data) => {
+                await onSubmit(data);
                 setTitle("");
                 setOpen(false);
               }}

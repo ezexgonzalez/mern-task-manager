@@ -4,6 +4,8 @@ import Register from "../pages/Register.jsx";
 import Login from "../pages/Login.jsx";
 import Dashboard from "../pages/Dashboard.jsx";
 import PrivateRoute from "./PrivateRoute.jsx";
+import PublicRoute from "./PublicRoute.jsx";
+import AuthSessionHandler from "./AuthSessionHandler.jsx";
 import { useAuthStore } from "../store/useAuthStore.js";
 import { useEffect } from "react";
 import Layout from "../components/layout/Layout.jsx";
@@ -18,24 +20,28 @@ function AppRouter() {
 
   return (
     <BrowserRouter>
+      <AuthSessionHandler />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route
-          path="/register"
-          element={
-            <Layout>
-              <Register />
-            </Layout>
-          }
-        />
-        <Route
-          path="/login"
-          element={
-            <Layout>
-              <Login />
-            </Layout>
-          }
-        />
+        {/* Public Routes */}
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Home />} />
+          <Route
+            path="/register"
+            element={
+              <Layout>
+                <Register />
+              </Layout>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <Layout>
+                <Login />
+              </Layout>
+            }
+          />
+        </Route>
 
         {/* Private Routes */}
         <Route element={<PrivateRoute />}>

@@ -11,6 +11,7 @@ import {
   getTaskStatusOption,
 } from "../constants/taskOptions.js";
 import TaskSelect from "./task/TaskSelect.jsx";
+import { getErrorMessage } from "../utils/getErrorMessage.js";
 
 const schema = yup.object().shape({
   title: yup.string().required("El título es obligatorio"),
@@ -57,6 +58,8 @@ const TaskForm = ({
   const status = watch("status");
   const [priorityOpen, setPriorityOpen] = useState(false);
   const priority = watch("priority");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const descriptionRef = useRef(null);
 
@@ -67,22 +70,31 @@ const TaskForm = ({
     }
   }, [titleValue, setValue]);
 
-  const submit = (data) => {
-    onSubmit(data);
+  const submit = async (data) => {
+    setIsSubmitting(true);
+    setFormError("");
 
-    reset({
-      title: "",
-      description: "",
-      status: "pending",
-      priority: "medium",
-      dueDate: "",
-      color: "#ffffff",
-    });
-    setStatusOpen(false);
-    setPriorityOpen(false);
+    try {
+      await onSubmit(data);
 
-    if (descriptionRef.current) {
-      descriptionRef.current.style.height = "";
+      reset({
+        title: "",
+        description: "",
+        status: "pending",
+        priority: "medium",
+        dueDate: "",
+        color: "#ffffff",
+      });
+      setStatusOpen(false);
+      setPriorityOpen(false);
+
+      if (descriptionRef.current) {
+        descriptionRef.current.style.height = "";
+      }
+    } catch (err) {
+      setFormError(getErrorMessage(err, "Error al guardar la tarea"));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -217,10 +229,12 @@ const TaskForm = ({
       {errors.priority && (
         <p className="text-red-400 text-xs">{errors.priority.message}</p>
       )}
+      {formError && <p className="text-red-400 text-xs">{formError}</p>}
 
       <div className="flex justify-end mt-1">
         <button
           type="submit"
+          disabled={isSubmitting}
           className="
             px-5 py-2
             bg-success/20 text-success
@@ -228,9 +242,10 @@ const TaskForm = ({
             hover:bg-success/30 hover:text-green-100
             transition
             shadow-bubble text-sm font-medium
+            disabled:opacity-60 disabled:cursor-not-allowed
           "
         >
-          {submitLabel}
+          {isSubmitting ? "Guardando..." : submitLabel}
         </button>
       </div>
     </form>

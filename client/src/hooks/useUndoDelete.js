@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback } from "react";
+import { getErrorMessage } from "../utils/getErrorMessage.js";
 
 export const useUndoDelete = ({
   tasks,
@@ -29,12 +30,13 @@ export const useUndoDelete = ({
       if (deleteTaskServerRef.current) {
         deleteTaskServerRef.current(idToDelete).catch((err) => {
           console.error("Error al borrar definitivamente:", err);
+          showToast(getErrorMessage(err, "Error al eliminar la tarea"));
         });
       }
 
       pendingDeleteTaskRef.current = null;
     }
-  }, []);
+  }, [showToast]);
 
   const handleUndoDelete = useCallback(() => {
     if (undoTimeoutRef.current) {
