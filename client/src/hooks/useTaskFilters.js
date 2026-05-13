@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
+import { getDueBucket, getDueDateTime } from "../utils/taskDates.js";
+import { getTaskStats } from "../utils/taskStats.js";
 
 export const FILTERS = [
   { key: "all", label: "Todas" },
@@ -43,35 +45,6 @@ const getTime = (task) => {
   const value = task.updatedAt || task.createdAt;
   const ms = value ? new Date(value).getTime() : 0;
   return Number.isFinite(ms) ? ms : 0;
-};
-
-const getDueDateTime = (task) => {
-  if (!task.dueDate) return Number.POSITIVE_INFINITY;
-
-  const dateOnly =
-    typeof task.dueDate === "string" ? task.dueDate.split("T")[0] : task.dueDate;
-  const [year, month, day] = dateOnly.split("-").map(Number);
-  const ms = new Date(year, month - 1, day).getTime();
-
-  return Number.isFinite(ms) ? ms : Number.POSITIVE_INFINITY;
-};
-
-const getDueBucket = (task) => {
-  if (!task.dueDate) return "none";
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const taskDate = new Date(getDueDateTime(task));
-  taskDate.setHours(0, 0, 0, 0);
-
-  const diffDays = Math.round(
-    (taskDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
-  );
-
-  if (diffDays < 0) return "overdue";
-  if (diffDays === 0) return "today";
-  return "upcoming";
 };
 
 export const useTaskFilters = (tasks) => {
@@ -165,6 +138,8 @@ export const useTaskFilters = (tasks) => {
     return c;
   }, [tasks]);
 
+  const stats = useMemo(() => getTaskStats(tasks), [tasks]);
+
   const visibleTasks = useMemo(() => {
     const byStatus =
       statusFilter === "all"
@@ -236,6 +211,7 @@ export const useTaskFilters = (tasks) => {
     debouncedQuery,
     visibleTasks,
     counts,
+    stats,
     hasActiveFilters,
     resetFilters,
   };

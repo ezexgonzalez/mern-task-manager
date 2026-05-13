@@ -1,3 +1,5 @@
+import { getDueDateDiffDays, getDueDateTime } from "../utils/taskDates.js";
+
 export const TASK_STATUS_OPTIONS = [
   { value: "pending", label: "Pendiente", dotClass: "bg-warning" },
   { value: "in-progress", label: "En progreso", dotClass: "bg-progress" },
@@ -36,17 +38,8 @@ export const getTaskPriorityOption = (priority) =>
 export const getDueDateInfo = (dueDate) => {
   if (!dueDate) return null;
 
-  const today = new Date();
-  const dateOnly =
-    typeof dueDate === "string" ? dueDate.split("T")[0] : dueDate;
-  const [year, month, day] = dateOnly.split("-").map(Number);
-  const taskDate = new Date(year, month - 1, day);
-
-  today.setHours(0, 0, 0, 0);
-  taskDate.setHours(0, 0, 0, 0);
-
-  const diffTime = taskDate.getTime() - today.getTime();
-  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = getDueDateDiffDays(dueDate);
+  if (diffDays === null) return null;
 
   if (diffDays < 0) {
     return {
@@ -68,6 +61,8 @@ export const getDueDateInfo = (dueDate) => {
       className: "text-amber-200 border-amber-400/15 bg-amber-400/5",
     };
   }
+
+  const taskDate = new Date(getDueDateTime(dueDate));
 
   return {
     label: `Vence ${taskDate.toLocaleDateString("es-AR", {
