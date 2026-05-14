@@ -57,18 +57,18 @@ const TaskStats = ({ stats }) => {
             <div
               key={key}
               className="
-                flex min-w-0 items-center gap-2 rounded-[14px] border border-white/[0.05] bg-white/[0.018]
+                flex min-w-0 flex-col items-start gap-1.5 rounded-[14px] border border-white/[0.05] bg-white/[0.018]
                 px-2 py-1.5 transition hover:bg-white/[0.035]
-                sm:block sm:rounded-[16px] sm:border-white/[0.06] sm:bg-white/[0.025] sm:px-3 sm:py-2.5 sm:hover:bg-white/[0.04]
+                sm:gap-0 sm:rounded-[16px] sm:border-white/[0.06] sm:bg-white/[0.025] sm:px-3 sm:py-2.5 sm:hover:bg-white/[0.04]
               "
             >
               <div
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border opacity-80 sm:mb-2 sm:h-7 sm:w-7 sm:opacity-100 ${accentClass}`}
+                className={`grid h-6 w-6 shrink-0 -translate-x-1.5 place-items-center rounded-full border opacity-80 sm:mb-2 sm:h-7 sm:w-7 sm:opacity-100 ${accentClass}`}
               >
                 <StatIcon className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
               </div>
 
-              <div className="min-w-0">
+              <div className="flex min-w-0 flex-col items-start">
                 <p className="text-base font-semibold leading-none text-white sm:text-xl">
                   {stats[key]}
                 </p>
