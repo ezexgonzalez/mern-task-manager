@@ -1,12 +1,40 @@
+import mongoose from "mongoose";
 import Task from "../models/Task.js";
+
+const isValidDueDate = (dueDate) => {
+  if (dueDate === undefined || dueDate === null || dueDate === "") return true;
+  if (typeof dueDate !== "string") return false;
+
+  const date = new Date(dueDate);
+  return Number.isFinite(date.getTime());
+};
+
+const handleTaskError = (error, res) => {
+  if (error.name === "ValidationError" || error.name === "CastError") {
+    return res.status(400).json({ message: "Datos de tarea invalidos" });
+  }
+
+  console.error(error);
+  return res.status(500).json({ message: "Error interno del servidor" });
+};
+
+const isInvalidTaskId = (taskId) => !mongoose.isValidObjectId(taskId);
 
 export const createTask = async (req, res) => {
   try {
     const { title, description, status, color, priority, dueDate } = req.body;
     const userId = req.user.id;
 
-    if (!title || title.trim() === "") {
+    if (typeof title !== "string" || title.trim() === "") {
       return res.status(400).json({ message: "El titulo es obligatorio" });
+    }
+
+    if (description !== undefined && typeof description !== "string") {
+      return res.status(400).json({ message: "La descripcion no es valida" });
+    }
+
+    if (!isValidDueDate(dueDate)) {
+      return res.status(400).json({ message: "La fecha limite no es valida" });
     }
 
     const newTask = await Task.create({
@@ -23,8 +51,7 @@ export const createTask = async (req, res) => {
       .status(201)
       .json({ message: "Tarea creada correctamente", task: newTask });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Error interno del servidor" });
+    return handleTaskError(error, res);
   }
 };
 
@@ -46,6 +73,11 @@ export const getTaskById = async (req, res) => {
   try {
     const userId = req.user.id;
     const taskId = req.params.id;
+
+    if (isInvalidTaskId(taskId)) {
+      return res.status(400).json({ message: "Id de tarea invalido" });
+    }
+
     const task = await Task.findById(taskId);
 
     if (!task) {
@@ -61,7 +93,7 @@ export const getTaskById = async (req, res) => {
       .status(200)
       .json({ message: "Tarea encontrada con exito", task });
   } catch (error) {
-    return res.status(500).json({ message: "Error interno del servidor" });
+    return handleTaskError(error, res);
   }
 };
 
@@ -69,6 +101,22 @@ export const updateTask = async (req, res) => {
   try {
     const taskId = req.params.id;
     const { title, description, status, color, priority, dueDate } = req.body;
+
+    if (isInvalidTaskId(taskId)) {
+      return res.status(400).json({ message: "Id de tarea invalido" });
+    }
+
+    if (title !== undefined && typeof title !== "string") {
+      return res.status(400).json({ message: "El titulo no es valido" });
+    }
+
+    if (description !== undefined && typeof description !== "string") {
+      return res.status(400).json({ message: "La descripcion no es valida" });
+    }
+
+    if (!isValidDueDate(dueDate)) {
+      return res.status(400).json({ message: "La fecha limite no es valida" });
+    }
 
     const task = await Task.findById(taskId);
 
@@ -116,13 +164,18 @@ export const updateTask = async (req, res) => {
       .status(200)
       .json({ message: "Tarea actualizada con exito", task });
   } catch (error) {
-    return res.status(500).json({ message: "Error interno del servidor" });
+    return handleTaskError(error, res);
   }
 };
 
 export const deleteTask = async (req, res) => {
   try {
     const taskId = req.params.id;
+
+    if (isInvalidTaskId(taskId)) {
+      return res.status(400).json({ message: "Id de tarea invalido" });
+    }
+
     const task = await Task.findById(taskId);
 
     if (!task) {
@@ -138,6 +191,6 @@ export const deleteTask = async (req, res) => {
 
     return res.status(200).json({ message: "Tarea eliminada con exito" });
   } catch (error) {
-    return res.status(500).json({ message: "Error interno del servidor" });
+    return handleTaskError(error, res);
   }
 };
