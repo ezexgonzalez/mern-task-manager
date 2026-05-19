@@ -1,217 +1,234 @@
-# Task Manager · Liquid Glass UI
+# MERN Task Manager
 
-Aplicación **full stack MERN** para gestionar tareas de forma simple y elegante, con un diseño **dark mode + liquid glass** inspirado en interfaces modernas (Apple / Telegram).
+Aplicacion full stack MERN para gestionar tareas personales con autenticacion, rutas protegidas y una interfaz responsive en dark mode.
 
-Permite:
-- Crear, editar y eliminar tareas.
-- Asignar estado a cada tarea (Pendiente, En progreso, Completada).
-- Proteger el acceso con autenticación basada en **JWT**.
-- Disfrutar de una experiencia de usuario fluida, con animaciones suaves y UI consistente.
+El proyecto permite registrarse, iniciar sesion, crear tareas, editarlas, eliminarlas, filtrarlas y visualizar un resumen del estado general. Esta pensado como proyecto de portfolio para mostrar un flujo completo entre frontend, API REST y base de datos.
 
----
+## Demo
 
-## ✨ Características principales
+Demo URL: pendiente de agregar.
 
-- 🔐 **Autenticación JWT**
-  - Registro de usuario con email, contraseña y nombre.
-  - Login seguro.
-  - Protección de rutas en el frontend.
-  - Persistencia de sesión mediante token.
+## Screenshots
 
-- ✅ **Gestión de tareas (CRUD completo)**
-  - Crear nuevas tareas desde un input tipo “¿Alguna idea nueva?”.
-  - Editar una tarea en un modal tipo glass.
-  - Eliminar tareas con confirmación visual vía toast.
-  - Estados de tarea:
-    - `pending`
-    - `in-progress`
-    - `completed`
+Pendiente de agregar capturas del proyecto:
 
-- 🧊 **Diseño Liquid Glass / Dark Mode**
-  - Tarjetas con fondo blur, bordes suaves y sombras profundas.
-  - Gradientes sutiles en el fondo.
-  - Botones principales con highlight verde (success).
-  - Animaciones con framer-motion en:
-    - Drawer de creación de tareas.
-    - Modal de edición.
-    - Menús flotantes.
+- Landing / login
+- Dashboard con tareas
+- Modal de edicion
+- Vista mobile
 
-- 📱 **UX cuidada**
-  - Formularios con validación en tiempo real.
-  - Mensajes de error claros (frontend + backend).
-  - Toasts de éxito al crear / actualizar / eliminar.
-  - Manejo de estados de carga (skeleton al cargar tareas).
-  - Layout responsivo y centrado en todas las pantallas.
-
----
-
-## 🛠️ Tecnologías utilizadas
+## Stack
 
 ### Frontend
 
-- **React** (Vite)
-- **React Router DOM**
-- **Tailwind CSS** (con paleta custom dark + glass)
-- **React Hook Form** + **Yup** (validación de formularios)
-- **Axios** (consumo de API)
-- **Framer Motion** (animaciones)
-- **Lucide React** (íconos)
-- **Zustand** (gestión de estado de autenticación)
+- React
+- Vite
+- React Router
+- Tailwind CSS
+- Axios
+- Zustand
+- React Hook Form
+- Yup
+- Framer Motion
+- Lucide React
 
 ### Backend
 
-- **Node.js** + **Express**
-- **MongoDB Atlas** + **Mongoose**
-- **JWT (jsonwebtoken)** (autenticación)
-- **bcryptjs** (hash de contraseñas)
-- **dotenv** (variables de entorno)
-- **cors** (configuración de CORS para el frontend)
+- Node.js
+- Express
+- MongoDB
+- Mongoose
+- JWT
+- bcryptjs
+- CORS
+- dotenv
 
----
+## Que permite hacer
 
-## 🧩 Arquitectura general
+- Registrarse e iniciar sesion.
+- Mantener una sesion autenticada con JWT.
+- Proteger rutas privadas en frontend y backend.
+- Crear, listar, editar y eliminar tareas.
+- Asociar cada tarea al usuario autenticado.
+- Organizar tareas por estado, prioridad y fecha limite.
+- Buscar tareas por titulo o descripcion.
+- Ordenar tareas por relevancia, fecha reciente, fecha limite o prioridad.
+- Ver estadisticas generales del tablero.
 
-- Arquitectura **MERN** clásica:
-  - Frontend en React (Vite) consumiendo una API REST.
-  - Backend en Express exponiendo endpoints protegidos.
-  - Base de datos en MongoDB Atlas.
+## Features actuales
 
-- Estructura lógica:
-  - `User`:
-    - `name`
-    - `email`
-    - `password (hashed)`
-  - `Task`:
-    - `title`
-    - `description`
-    - `status` (`pending`, `in-progress`, `completed`)
-    - `color`
-    - `user` (referencia al usuario dueño de la tarea)
-    - `timestamps`
+- Autenticacion con registro y login.
+- Persistencia de sesion mediante token en `localStorage`.
+- Verificacion de token al cargar la app.
+- Redireccion automatica ante sesion expirada o token invalido.
+- Rutas publicas y privadas con React Router.
+- API protegida con middleware JWT.
+- CRUD completo de tareas.
+- Validaciones basicas en frontend y backend.
+- Filtros por estado, prioridad y fecha.
+- Busqueda con debounce.
+- Ordenamiento por relevancia, fecha reciente, fecha limite y prioridad.
+- Estadisticas de tareas totales, pendientes, en progreso, completadas, vencidas y proximas.
+- Fechas limite y prioridades por tarea.
+- UI optimista al crear/actualizar tareas.
+- Eliminacion con toast y accion de deshacer.
+- Skeleton loading, estados vacios y mensajes de error.
+- Interfaz responsive con estilo dark/glass.
 
-- Flujo de autenticación:
-  1. El usuario se registra o inicia sesión.
-  2. El backend genera un **JWT** con la info del usuario.
-  3. El token se guarda en el frontend.
-  4. Cada request protegida envía el token en los headers.
-  5. El backend valida el token antes de acceder a las rutas privadas.
+## Instalacion local
 
----
+### 1. Clonar el repositorio
 
-## 📂 Estructura básica del proyecto
-
-(Ejemplo simplificado)
-
-``bash
-root
-├── client/              # Frontend (React + Vite)
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── router/
-│   │   ├── hooks/
-│   │   ├── store/
-│   │   └── services/
-│   └── ...
-└── server/              # Backend (Express)
-    ├── models/
-    ├── controllers/
-    ├── routes/
-    ├── middlewares/
-    └── index.js
-
-## ⚙️ Variables de entorno
-
-### Backend (`server/.env`)
-
-``env
-PORT=5000
-MONGO_URI=tu_conexion_de_mongo_atlas
-JWT_SECRET=tu_clave_super_secreta
-CLIENT_URL=http://localhost:5173
-
-
-### Frontend (client/.env)
-VITE_API_URL=http://localhost:5000/api
-
-
-🚀 Scripts disponibles
-Backend
-
-Desde la carpeta server:
-
-# Desarrollo
-npm run dev
-
-
-El backend corre con nodemon y recarga automáticamente.
-
-Frontend
-
-Desde la carpeta client:
-
-# Desarrollo
-npm run dev
-
-# Build de producción
-npm run build
-
-# Previsualizar build
-npm run preview
-
-▶️ Cómo correr el proyecto localmente
-
-Clonar el repositorio:
-
+```bash
 git clone https://github.com/tu-usuario/tu-repo.git
-cd tu-repo
+cd mern-task-manager
+```
 
+### 2. Configurar el backend
 
-# Instalar dependencias del backend:
-
+```bash
 cd server
 npm install
+```
 
+Crear un archivo `.env` dentro de `server`:
 
-# Configurar el archivo .env del backend (Mongo, JWT, etc.).
+```env
+PORT=5000
+MONGO_URI=tu_conexion_de_mongodb
+JWT_SECRET=tu_clave_secreta
+CORS_ORIGINS=http://localhost:5173
+```
 
-# Levantar el backend:
+Levantar el servidor:
 
+```bash
 npm run dev
+```
 
+La API queda disponible en:
 
-En otra terminal, instalar dependencias del frontend:
+```text
+http://localhost:5000
+```
 
-cd ../client
+### 3. Configurar el frontend
+
+En otra terminal:
+
+```bash
+cd client
 npm install
+```
 
+Crear un archivo `.env` dentro de `client`:
 
-Configurar el .env del frontend (VITE_API_URL apuntando al backend).
+```env
+VITE_API_URL=http://localhost:5000/api
+```
 
-# Levantar el frontend:
+Levantar el cliente:
 
+```bash
 npm run dev
+```
 
+La app queda disponible normalmente en:
 
-Abrir en el navegador:
-
+```text
 http://localhost:5173
+```
 
-🌱 Roadmap / mejoras futuras
+## Variables de entorno
 
-Filtros por estado (ver solo pendientes, en progreso, completadas).
+### Server
 
-Botón rápido para marcar tareas como completadas desde la tarjeta.
+| Variable | Descripcion |
+| --- | --- |
+| `PORT` | Puerto donde corre Express. Por defecto usa `5000`. |
+| `MONGO_URI` | URL de conexion a MongoDB. |
+| `JWT_SECRET` | Clave usada para firmar y verificar tokens JWT. |
+| `CORS_ORIGINS` | Lista de origenes permitidos, separados por coma. Ejemplo: `http://localhost:5173,https://tu-demo.vercel.app`. |
 
-Manejo avanzado de errores (token expirado, problemas de red, etc.).
+### Client
 
-Soporte multi-idioma.
+| Variable | Descripcion |
+| --- | --- |
+| `VITE_API_URL` | URL base de la API. Ejemplo: `http://localhost:5000/api`. |
 
-Tema claro / oscuro con toggle.
+## Scripts disponibles
 
-Estadísticas simples (número de tareas por estado).
+### Server
 
-🧑‍💻 Autor
+```bash
+npm run dev
+npm start
+```
 
-Desarrollado por Ezequiel Gonzalez
-Full Stack Developer (MERN)
+- `dev`: ejecuta el backend con `nodemon`.
+- `start`: ejecuta el backend con Node.
+
+### Client
+
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run preview
+```
+
+- `dev`: levanta Vite en modo desarrollo.
+- `build`: genera el build de produccion.
+- `lint`: ejecuta ESLint.
+- `preview`: previsualiza el build de Vite.
+
+## Estructura del proyecto
+
+```text
+mern-task-manager/
+|-- client/
+|   |-- public/
+|   `-- src/
+|       |-- components/
+|       |-- components/layout/
+|       |-- components/task/
+|       |-- constants/
+|       |-- hooks/
+|       |-- pages/
+|       |-- router/
+|       |-- services/
+|       |-- store/
+|       `-- utils/
+`-- server/
+    |-- config/
+    |-- controllers/
+    |-- middlewares/
+    |-- models/
+    `-- routes/
+```
+
+## Decisiones tecnicas destacables
+
+- Separacion entre frontend y backend para mantener responsabilidades claras.
+- API REST protegida con JWT en header `Authorization: Bearer <token>`.
+- Estado global de autenticacion con Zustand.
+- Interceptor de Axios para agregar token y manejar respuestas `401`.
+- Hooks propios para separar logica de tareas, filtros, toasts y undo delete.
+- Validacion de formularios con React Hook Form y Yup.
+- Validaciones de backend en modelos y controladores para reducir errores esperables.
+- Ownership de tareas: cada usuario solo accede a sus propias tareas.
+- UI optimista en operaciones de tareas para mejorar la sensacion de velocidad.
+
+## Futuras mejoras realistas
+
+- Agregar tests basicos de backend para auth y CRUD de tareas.
+- Agregar `.env.example` para client y server.
+- Mejorar accesibilidad de menus, modal y controles custom.
+- Agregar middleware global de errores en Express.
+- Agregar paginacion o carga incremental si la lista de tareas crece mucho.
+- Revisar estrategia de sesion para produccion, por ejemplo cookies httpOnly.
+- Agregar screenshots reales y URL de demo desplegada.
+
+## Autor
+
+Desarrollado por Ezequiel Gonzalez.
